@@ -1,0 +1,41 @@
+---
+import { withBase, isActivePath } from '../../lib/base-path';
+import { SITE, NAV_ITEMS } from '../../config/site';
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="border-b border-border bg-surface/70 backdrop-blur-sm">
+  <div class="shell-container flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4">
+    <a
+      href={withBase('/')}
+      class="font-serif text-xl font-semibold text-ink no-underline sm:text-2xl"
+    >
+      {SITE.name}
+    </a>
+
+    <nav aria-label="Primary">
+      <ul class="flex flex-wrap items-center gap-x-5 gap-y-1 text-sm sm:text-base">
+        {
+          NAV_ITEMS.map((item) => {
+            const active = isActivePath(currentPath, item.href);
+            return (
+              <li>
+                <a
+                  href={withBase(item.href)}
+                  aria-current={active ? 'page' : undefined}
+                  class:list={[
+                    'inline-block py-1 no-underline transition-colors',
+                    active ? 'font-semibold text-teal-strong' : 'text-ink-soft hover:text-teal',
+                  ]}
+                >
+                  {item.label}
+                </a>
+              </li>
+            );
+          })
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

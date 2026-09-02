@@ -1,0 +1,26 @@
+---
+import { SITE, DISCLAIMER } from '../../config/site';
+
+const year = new Date().getFullYear();
+const codeLicenseUrl = `${SITE.repoUrl}/blob/main/LICENSE`;
+const contentLicenseUrl = `${SITE.repoUrl}/blob/main/CONTENT-LICENSE.md`;
+const contentCopyright = `© ${year} ${SITE.author} — all rights reserved.`;
+---
+
+<footer class="mt-16 border-t border-border bg-surface-sunk">
+  <div class="shell-container flex flex-col gap-4 py-8 text-sm text-muted">
+    <p class="max-w-prose font-medium text-ink-soft">{DISCLAIMER}</p>
+
+    <p class="max-w-prose">
+      Source code is licensed <a href={codeLicenseUrl} class="underline">MIT</a>. The original
+      handwritten notes, scanned PDFs, written descriptions, and derived thumbnails are
+      {` ${contentCopyright} `}
+      Downloading a note does not grant republication rights. See the{' '}
+      <a href={contentLicenseUrl} class="underline">content license</a>.
+    </p>
+
+    <p>
+      <a href={SITE.repoUrl} class="underline">Project repository on GitHub</a>
+    </p>
+  </div>
+</footer>

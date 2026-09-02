@@ -1,0 +1,33 @@
+# build output
+dist/
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# local-only note drafts — this directory is NEVER committed.
+# The repository is public: route exclusion alone does not make a draft private.
+# `.drafts/` is not a backup. Keep private high-resolution originals elsewhere.
+.drafts/
+
+# test / coverage artifacts
+coverage/
+
+# logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+.idea/
+*.swp
