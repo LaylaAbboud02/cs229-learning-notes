@@ -18,6 +18,10 @@ export default defineConfig({
   // Static output only. No SSR, no adapter, no server endpoints.
   output: 'static',
 
+  // The test-only demo preview (`scripts/demo-preview.mjs`) redirects output to
+  // a disposable, gitignored directory. A normal build ignores this.
+  ...(process.env.CS229_OUT_DIR ? { outDir: process.env.CS229_OUT_DIR } : {}),
+
   integrations: [react(), notesIntegrity(), devFixtures()],
 
   vite: {

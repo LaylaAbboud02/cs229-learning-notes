@@ -14,7 +14,7 @@ import globals from 'globals';
  */
 export default tseslint.config(
   {
-    ignores: ['dist/', '.astro/', 'node_modules/', 'coverage/', 'pnpm-lock.yaml'],
+    ignores: ['dist/', 'dist-demo/', '.astro/', 'node_modules/', 'coverage/', 'pnpm-lock.yaml'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

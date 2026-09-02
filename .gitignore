@@ -15,6 +15,9 @@ node_modules/
 # test / coverage artifacts
 coverage/
 
+# test-only demo preview build (scripts/demo-preview.mjs) — disposable
+dist-demo/
+
 # logs
 *.log
 npm-debug.log*

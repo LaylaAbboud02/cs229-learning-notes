@@ -1,23 +1,24 @@
 /**
- * DEVELOPMENT-ONLY: the demo-notes bridge.
- *
- * Two jobs, both scoped strictly to `astro dev` with `PUBLIC_DEMO_NOTES=on`:
+ * The demo-notes bridge. Two jobs, both gated so they can NEVER be reached by an
+ * ordinary `pnpm build` or a GitHub Pages deployment:
  *
  * 1. `astro:config:setup` defines `import.meta.env.CS229_DEMO_NOTES`. It is
- *    `true` only when the Astro CLI `command` is `dev` AND the env flag is set,
- *    and a literal `false` for every `astro build` / `astro preview`. The page
- *    code guards the demo import on this constant, so it is dead-code-eliminated
- *    from every build — regardless of `NODE_ENV` (Vite's own
- *    `import.meta.env.DEV` is `true` during a build when `NODE_ENV=test`, so it
- *    is NOT a safe guard).
+ *    `true` only for:
+ *      - `astro dev` with `PUBLIC_DEMO_NOTES=on`, or
+ *      - the explicit test-only demo preview: `astro build` with
+ *        `CS229_DEMO_PREVIEW=1` (set exclusively by `scripts/demo-preview.mjs`,
+ *        which also forces the output into the gitignored `dist-demo/`).
+ *    It is a literal `false` for every other build — regardless of `NODE_ENV`
+ *    (Vite's own `import.meta.env.DEV` is `true` during a build when
+ *    `NODE_ENV=test`, so it is NOT a safe guard). The page code guards the demo
+ *    import on this constant, so it is dead-code-eliminated everywhere else.
  *
  * 2. `astro:server:setup` adds a Vite dev-server middleware that maps `/pdfs/`
  *    requests to `tests/fixtures/assets/`, so the demo notes' PDFs resolve in
- *    dev (the Phase 4 reader needs a file to load). Demo *thumbnails* are not
- *    served — `NoteThumbnail` renders a lined-paper placeholder for any missing
- *    thumbnail, which is the intended graceful fallback.
+ *    `astro dev`. Demo thumbnails are not served — `NoteThumbnail` renders a
+ *    lined-paper placeholder for any missing thumbnail.
  *
- * No fixture file is ever copied into `public/` or the build output.
+ * No fixture file is ever copied into `public/` or a normal build output.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -28,8 +29,11 @@ import type { AstroIntegration } from 'astro';
 const FIXTURE_DIR = 'tests/fixtures/assets';
 const SERVED_PREFIXES = ['/pdfs/'];
 
-function demoNotesEnabled(command: string): boolean {
-  return command === 'dev' && process.env.PUBLIC_DEMO_NOTES === 'on';
+/** Whether the demo notes should be merged into the note collection. */
+export function demoNotesEnabled(command: string, env: NodeJS.ProcessEnv = process.env): boolean {
+  if (command === 'dev') return env.PUBLIC_DEMO_NOTES === 'on';
+  if (command === 'build') return env.CS229_DEMO_PREVIEW === '1';
+  return false;
 }
 
 export default function devFixturesIntegration(): AstroIntegration {

@@ -1,0 +1,44 @@
+---
+import type { PublicNote } from '../../lib/notes';
+
+interface Props {
+  prev: PublicNote | null;
+  next: PublicNote | null;
+}
+
+const { prev, next } = Astro.props;
+---
+
+{
+  (prev || next) && (
+    <nav aria-label="Adjacent notes" class="grid gap-3 border-t border-border pt-6 sm:grid-cols-2">
+      {prev ? (
+        <a
+          href={prev.href}
+          class="flex flex-col gap-1 rounded-card border border-border bg-surface p-4 no-underline transition-shadow hover:shadow-card"
+        >
+          <span class="text-xs font-semibold tracking-wide text-muted uppercase">
+            &larr; Previous note
+          </span>
+          <span class="font-serif text-ink">{prev.title}</span>
+        </a>
+      ) : (
+        <span />
+      )}
+
+      {next ? (
+        <a
+          href={next.href}
+          class="flex flex-col gap-1 rounded-card border border-border bg-surface p-4 text-right no-underline transition-shadow hover:shadow-card sm:items-end"
+        >
+          <span class="text-xs font-semibold tracking-wide text-muted uppercase">
+            Next note &rarr;
+          </span>
+          <span class="font-serif text-ink">{next.title}</span>
+        </a>
+      ) : (
+        <span />
+      )}
+    </nav>
+  )
+}
