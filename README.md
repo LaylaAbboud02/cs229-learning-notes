@@ -13,20 +13,24 @@ replacement, a CMS, or a collaborative upload platform.
 
 ## Status
 
-**Phase 1 of 7 — scaffold and quality baseline.**
+**Phase 5 of 7 — guided note workflow.**
 
 In place now:
 
 - Astro + React + Tailwind CSS v4 project on pnpm, strict TypeScript
-- Light-theme design tokens and typography
-- Base layout, header, footer, skip link, and accessible primary navigation
-- GitHub Pages base-path helper (`src/lib/base-path.ts`) + unit tests
-- Formatting, linting, type-checking, unit-test, and build commands
+- Light-theme design tokens, typography, base layout, and accessible navigation
+- Typed 2018 course configuration and the published-note content collection + schema
+- Unified `/notes` library plus `/lectures` and `/exercises` pages, search, and filters
+- Custom client-only PDF reader (prev/next, page input, zoom, fit width, rotate,
+  fullscreen, download, loading/error fallbacks)
+- Guided publishing commands: `pnpm add-note`, `pnpm publish-note`,
+  `pnpm validate-notes` — PDF verification, page/byte counting, WebP thumbnail
+  generation, local drafts, collision prevention, and transactional publish with
+  rollback. The production build now fails on invalid published PDF metadata.
 
-Not yet built (later phases): course configuration, the content collection and
-schema, the note library / lecture / exercise pages, search and filters, the
-custom PDF reader, and the `add-note` / `publish-note` / `validate-notes`
-tooling. See [`docs/IMPLEMENTATION_PLAN.md`](./docs/IMPLEMENTATION_PLAN.md).
+Not yet built (later phases): CI and GitHub Pages deployment workflows, sitemap
+and social metadata, browser smoke tests, and the first real note content. See
+[`docs/IMPLEMENTATION_PLAN.md`](./docs/IMPLEMENTATION_PLAN.md).
 
 ## Requirements
 
@@ -45,11 +49,24 @@ pnpm format           # apply Prettier
 pnpm format:check     # verify formatting
 pnpm lint             # ESLint (JS/TS)
 pnpm check            # astro check (type + template diagnostics)
-pnpm test             # unit tests (Vitest, run once)
-pnpm test:watch       # unit tests in watch mode
+pnpm test             # unit + integration tests (Vitest, run once)
+pnpm test:watch       # tests in watch mode
 
-pnpm verify           # format:check + lint + check + test + build
+pnpm verify           # format:check + lint + check + test + validate-notes + build
 ```
+
+### Publishing notes
+
+```bash
+pnpm add-note <path-to-pdf>   # guided import: publishes a note or saves a local draft
+pnpm publish-note <slug>      # finish and publish a saved .drafts/<slug>
+pnpm validate-notes           # validate every published note (the build runs the same checks)
+```
+
+These commands never run `git` and never modify the source PDF. Incomplete
+imports are saved under the gitignored `.drafts/` directory, which is local-only
+and **not a backup**. Full workflow:
+[`docs/PUBLISHING_WORKFLOW.md`](./docs/PUBLISHING_WORKFLOW.md).
 
 ## Deployment
 
