@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify": "pnpm run format:check && pnpm run lint && pnpm run check && pnpm run test && pnpm run build",
+    "demo:preview": "node scripts/demo-preview.mjs",
     "astro": "astro"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "gray-matter": "^4.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-pdf": "^10.5.0",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {

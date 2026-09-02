@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/library/Breadcrumbs.astro';
+import NoteMetaPanel from '../../components/reader/NoteMetaPanel.astro';
+import NoteNav from '../../components/reader/NoteNav.astro';
+import PdfReader from '../../components/reader/PdfReader';
+import { adjacentNotes, getListingNotes, type PublicNote } from '../../lib/notes';
+import { NOTE_TYPE_CONFIG } from '../../config/note-types';
+
+export async function getStaticPaths() {
+  const notes = await getListingNotes();
+  return notes.map((note) => {
+    const { prev, next } = adjacentNotes(notes, note.slug);
+    return {
+      params: { slug: note.slug },
+      props: { note, prev: prev ?? null, next: next ?? null },
+    };
+  });
+}
+
+interface Props {
+  note: PublicNote;
+  prev: PublicNote | null;
+  next: PublicNote | null;
+}
+
+const { note, prev, next } = Astro.props;
+const typeConfig = NOTE_TYPE_CONFIG[note.type];
+const fileName = `${note.slug}.pdf`;
+const parentCrumb = { label: typeConfig.pluralLabel, href: typeConfig.route };
+---
+
+<BaseLayout title={note.title} description={note.description}>
+  <div class="flex flex-col gap-6">
+    <Breadcrumbs items={[{ label: 'Home', href: '/' }, parentCrumb, { label: note.title }]} />
+
+    <header class="max-w-3xl">
+      <p class="text-sm font-semibold tracking-wide text-muted uppercase">{typeConfig.label}</p>
+      <h1 class="mt-1 text-3xl sm:text-4xl">{note.title}</h1>
+      <p class="mt-3 text-muted">{note.description}</p>
+    </header>
+
+    <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
+      <div>
+        <PdfReader
+          client:only="react"
+          pdfUrl={note.pdfUrl}
+          fileName={fileName}
+          title={note.title}
+          initialPageCount={note.pageCount}
+        >
+          <div
+            slot="fallback"
+            class="flex flex-col gap-4 rounded-card border border-border bg-surface-sunk p-6 text-center text-sm text-muted"
+          >
+            <p>Loading the reader&hellip;</p>
+            <p class="flex flex-wrap justify-center gap-x-3 gap-y-1">
+              <a href={note.pdfUrl} target="_blank" rel="noopener">Open the PDF</a>
+              <a href={note.pdfUrl} download={fileName}>Download the PDF</a>
+            </p>
+          </div>
+        </PdfReader>
+      </div>
+
+      <NoteMetaPanel note={note} />
+    </div>
+
+    <NoteNav prev={prev} next={next} />
+  </div>
+</BaseLayout>

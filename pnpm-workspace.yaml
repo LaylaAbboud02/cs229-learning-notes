@@ -2,3 +2,10 @@
 # esbuild is permitted to run its install script (it fetches its platform binary).
 allowBuilds:
   esbuild: true
+
+# react-pdf 10 pins an exact pdfjs-dist. Hoist it so the reader module can
+# resolve `new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url)` and
+# Vite can bundle the worker as a local asset. (react-pdf's documented pnpm 11
+# guidance.)
+publicHoistPattern:
+  - pdfjs-dist

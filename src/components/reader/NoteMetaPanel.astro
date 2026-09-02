@@ -1,0 +1,100 @@
+---
+import type { PublicNote } from '../../lib/notes';
+import { NOTE_TYPE_CONFIG } from '../../config/note-types';
+import { SITE } from '../../config/site';
+import { formatDate, formatFileSize } from '../../lib/format';
+import Chip from '../library/Chip.astro';
+
+interface Props {
+  note: PublicNote;
+}
+
+const { note } = Astro.props;
+const typeConfig = NOTE_TYPE_CONFIG[note.type];
+
+const rows: { label: string; value: string }[] = [
+  { label: 'Type', value: typeConfig.label },
+  { label: 'Pages', value: String(note.pageCount) },
+  { label: 'File size', value: formatFileSize(note.fileSizeBytes) },
+];
+if (note.writtenAt) rows.push({ label: 'Written', value: formatDate(note.writtenAt) });
+rows.push({ label: 'Published', value: formatDate(note.publishedAt) });
+if (note.updatedAt) rows.push({ label: 'Updated', value: formatDate(note.updatedAt) });
+---
+
+<aside
+  aria-labelledby="note-meta-heading"
+  class="flex flex-col gap-5 rounded-card border border-border bg-surface p-5 text-sm"
+>
+  <div>
+    <h2 id="note-meta-heading" class="font-serif text-lg text-ink">About this note</h2>
+    <p class="mt-2 text-muted">{note.description}</p>
+  </div>
+
+  <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-t border-border pt-4">
+    {
+      rows.map((row) => (
+        <>
+          <dt class="text-muted">{row.label}</dt>
+          <dd class="text-ink-soft">{row.value}</dd>
+        </>
+      ))
+    }
+  </dl>
+
+  {
+    note.relatedLectures.length > 0 && (
+      <div class="border-t border-border pt-4">
+        <h3 class="font-semibold text-ink-soft">
+          Related {note.relatedLectures.length === 1 ? 'lecture' : 'lectures'}
+        </h3>
+        <ul class="mt-2 flex flex-col gap-1.5">
+          {note.relatedLectures.map((lecture) => (
+            <li>
+              <a href={lecture.sourceUrl} class="text-teal no-underline hover:underline">
+                {`Lecture ${lecture.numberLabel} · ${lecture.title}`}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    note.sources.length > 0 && (
+      <div class="border-t border-border pt-4">
+        <h3 class="font-semibold text-ink-soft">Sources</h3>
+        <ul class="mt-2 flex flex-col gap-1.5">
+          {note.sources.map((source) => (
+            <li>
+              <a href={source.url} class="text-teal no-underline hover:underline">
+                {source.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {
+    note.topics.length > 0 && (
+      <div class="border-t border-border pt-4">
+        <h3 class="font-semibold text-ink-soft">Topics</h3>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          {note.topics.map((topic) => (
+            <Chip label={topic} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  <p class="border-t border-border pt-4 text-xs text-muted">
+    {
+      `Unofficial personal notes — not affiliated with or endorsed by Stanford University. Note content © ${new Date().getFullYear()} ${SITE.author}, all rights reserved; downloading does not grant republication rights. `
+    }
+    <a href={`${SITE.repoUrl}/blob/main/CONTENT-LICENSE.md`} class="underline">Licensing</a>.
+  </p>
+</aside>

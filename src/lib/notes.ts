@@ -28,6 +28,8 @@ export interface ResolvedLectureRef {
   readonly title: string;
   /** Zero-padded number for display, e.g. "01". */
   readonly numberLabel: string;
+  /** The lecture's playlist video URL. */
+  readonly sourceUrl: string;
 }
 
 export interface PublicNoteSource {
@@ -156,6 +158,31 @@ export function hasAnyDuplicate(report: DuplicateReport): boolean {
   );
 }
 
+export interface NoteNeighbours<T> {
+  readonly prev?: T;
+  readonly next?: T;
+}
+
+/**
+ * The notes immediately before and after `slug` in course order. Used for the
+ * "previous / next note" navigation on the detail page. Returns `{}` if the slug
+ * is not in the set.
+ */
+export function adjacentNotes<T extends { slug: string; courseOrder: number; title: string }>(
+  notes: readonly T[],
+  slug: string,
+): NoteNeighbours<T> {
+  const ordered = sortByCourseOrder(notes);
+  const index = ordered.findIndex((note) => note.slug === slug);
+  if (index === -1) return {};
+  const prev = index > 0 ? ordered[index - 1] : undefined;
+  const next = index < ordered.length - 1 ? ordered[index + 1] : undefined;
+  return {
+    ...(prev ? { prev } : {}),
+    ...(next ? { next } : {}),
+  };
+}
+
 /** Shape a validated record for rendering. Requires the deploy base (via `withBase`). */
 export function toPublicNote(record: NoteRecord): PublicNote {
   const typeConfig = NOTE_TYPE_CONFIG[record.type];
@@ -165,6 +192,7 @@ export function toPublicNote(record: NoteRecord): PublicNote {
       sequence: lecture.sequence,
       title: lecture.title,
       numberLabel: lectureNumberLabel(lecture.id),
+      sourceUrl: lecture.sourceUrl,
     }),
   );
 

@@ -39,8 +39,8 @@ export const demoNoteRecords: readonly NoteRecord[] = [
     publishedAt: '2026-01-05',
     pdfPath: '/pdfs/lectures/demo-linear-regression.pdf',
     thumbnailPath: '/thumbnails/lectures/demo-linear-regression.webp',
-    pageCount: 4,
-    fileSizeBytes: 398,
+    pageCount: 3,
+    fileSizeBytes: 624,
     featured: true,
   },
   {
@@ -57,8 +57,8 @@ export const demoNoteRecords: readonly NoteRecord[] = [
     updatedAt: '2026-01-10',
     pdfPath: '/pdfs/exercises/demo-problem-set-1.pdf',
     thumbnailPath: '/thumbnails/exercises/demo-problem-set-1.webp',
-    pageCount: 3,
-    fileSizeBytes: 394,
+    pageCount: 2,
+    fileSizeBytes: 506,
     featured: false,
   },
 ];
