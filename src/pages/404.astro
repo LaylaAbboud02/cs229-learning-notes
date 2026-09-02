@@ -1,19 +1,41 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { withBase } from '../lib/base-path';
+import { NAV_ITEMS } from '../config/site';
 
-// A minimal, on-brand error state so the navigation shell degrades gracefully
-// for routes that later phases will add. The richer 404 (with links into the
-// note library) is a Phase 3 deliverable.
+const links = NAV_ITEMS.filter((item) => item.href !== '/');
 ---
 
-<BaseLayout title="Page not found">
-  <section class="max-w-prose">
-    <p class="font-serif text-6xl text-border-strong">404</p>
-    <h1 class="mt-2 text-3xl">This page isn't here</h1>
-    <p class="mt-4 text-muted">The page you're looking for doesn't exist yet or has moved.</p>
-    <p class="mt-6">
-      <a href={withBase('/')} class="underline">Return to the home page</a>
+<BaseLayout
+  title="Page not found"
+  description="That page could not be found. Links back into the CS229 Learning Notes library."
+>
+  <section class="mx-auto flex max-w-xl flex-col items-center gap-5 py-10 text-center">
+    <p class="font-serif text-7xl leading-none text-border-strong">404</p>
+    <h1 class="text-3xl">This page isn't here</h1>
+    <p class="text-muted">
+      The page you were looking for doesn't exist, has moved, or hasn't been published yet.
     </p>
+
+    <a
+      href={withBase('/')}
+      class="inline-flex items-center gap-2 rounded-md bg-teal-strong px-5 py-3 font-semibold text-white no-underline transition-colors hover:bg-teal"
+    >
+      Back to the home page
+    </a>
+
+    <nav aria-label="Site sections" class="mt-2">
+      <ul class="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+        {
+          links.map((item) => (
+            <li>
+              <a href={withBase(item.href)} class="text-teal no-underline hover:underline">
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
   </section>
 </BaseLayout>

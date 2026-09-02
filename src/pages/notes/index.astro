@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import LibraryView from '../../components/library/LibraryView.astro';
+import ProgressBar from '../../components/library/ProgressBar.astro';
+import { getListingNotes } from '../../lib/notes';
+
+const notes = await getListingNotes();
+---
+
+<BaseLayout
+  title="Notes"
+  description="The full library of handwritten CS229 (2018) lecture and exercise notes, with search and filters."
+>
+  <LibraryView
+    title="Note library"
+    subtitle="Every handwritten note — lecture and exercise — from the public 2018 Stanford CS229 course, newest work published as it is finished."
+    notes={notes}
+    breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Notes' }]}
+    noun="note"
+    emptyMessage="The library fills up as handwritten notes are finished — both lecture notes and exercise notes."
+  >
+    <div slot="aside" class="md:text-right">
+      <ProgressBar variant="compact" />
+    </div>
+  </LibraryView>
+</BaseLayout>

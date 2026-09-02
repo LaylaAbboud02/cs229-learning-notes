@@ -1,0 +1,35 @@
+---
+/**
+ * A note's first-page thumbnail with a graceful lined-paper placeholder.
+ *
+ * The placeholder always renders behind the image, so a missing or failed
+ * thumbnail (e.g. a real note whose asset 404s, or a dev demo note) degrades to
+ * a tidy paper card rather than a broken-image icon. `NoteGrid` attaches an
+ * error handler that removes a failed `<img>` so the placeholder shows through.
+ */
+interface Props {
+  src?: string;
+  /** Accessible description — the note title. */
+  alt: string;
+  class?: string;
+}
+
+const { src, alt, class: className } = Astro.props;
+---
+
+<div class:list={['note-thumb', className]}>
+  <div class="note-thumb__paper" aria-hidden="true">
+    <span class="note-thumb__label">{alt}</span>
+  </div>
+  {
+    src && (
+      <img
+        class="note-thumb__img"
+        src={src}
+        alt={`First page of the note: ${alt}`}
+        loading="lazy"
+        decoding="async"
+      />
+    )
+  }
+</div>

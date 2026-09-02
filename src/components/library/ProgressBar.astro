@@ -1,0 +1,41 @@
+---
+import { courseProgress } from '../../lib/course';
+
+interface Props {
+  /** `full` = label + big number + bar (home card). `compact` = one line + slim bar. */
+  variant?: 'full' | 'compact';
+  class?: string;
+}
+
+const { variant = 'compact', class: className } = Astro.props;
+const { watched, total, percent } = courseProgress();
+const label = `${watched} of ${total} lectures watched`;
+---
+
+{
+  variant === 'full' ? (
+    <div class:list={['flex flex-col gap-3', className]}>
+      <p class="text-sm font-semibold tracking-wide text-muted uppercase">Course progress</p>
+      <p class="font-serif text-3xl text-teal-strong">
+        {watched} <span class="text-ink-soft">/</span> {total} lectures
+      </p>
+      <progress class="cs-progress" value={watched} max={total} aria-label={label}>
+        {percent}%
+      </progress>
+    </div>
+  ) : (
+    <div class:list={['flex flex-col items-start gap-1.5 sm:items-end', className]}>
+      <p class="text-sm text-muted">
+        {watched} of {total} lectures watched
+      </p>
+      <progress
+        class="cs-progress cs-progress--slim"
+        value={watched}
+        max={total}
+        aria-label={label}
+      >
+        {percent}%
+      </progress>
+    </div>
+  )
+}

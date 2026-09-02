@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LibraryView from '../components/library/LibraryView.astro';
+import ProgressBar from '../components/library/ProgressBar.astro';
+import { getListingNotes, filterByType } from '../lib/notes';
+import { pluralize } from '../lib/format';
+
+// Same collection and components as /notes — this page exists only because
+// `lecture` is an active configured note type.
+const lectureNotes = filterByType(await getListingNotes(), 'lecture');
+---
+
+<BaseLayout
+  title="Lectures"
+  description="Handwritten notes from each lecture of the public 2018 Stanford CS229 course."
+>
+  <LibraryView
+    title="Lecture notes"
+    subtitle="Handwritten notes worked through from each CS229 lecture, in course order."
+    notes={lectureNotes}
+    breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Lectures' }]}
+    lockedType="lecture"
+    noun="lecture note"
+    emptyMessage="Lecture notes appear here as each CS229 lecture is worked through."
+  >
+    <div slot="aside" class="flex flex-col gap-2 md:items-end md:text-right">
+      <ProgressBar variant="compact" />
+      <p class="text-sm text-muted">{pluralize(lectureNotes.length, 'lecture note')} published</p>
+    </div>
+  </LibraryView>
+</BaseLayout>

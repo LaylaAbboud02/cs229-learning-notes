@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Breadcrumbs from '../components/library/Breadcrumbs.astro';
+import { SITE, DISCLAIMER } from '../config/site';
+import { COURSE } from '../config/course';
+import { withBase } from '../lib/base-path';
+---
+
+<BaseLayout
+  title="About"
+  description="What this site is: Layla Abboud's unofficial handwritten notes from the public 2018 Stanford CS229 course."
+>
+  <div class="flex max-w-2xl flex-col gap-8">
+    <Breadcrumbs items={[{ label: 'Home', href: '/' }, { label: 'About' }]} />
+
+    <div>
+      <h1 class="text-3xl sm:text-4xl">About this site</h1>
+      <p class="mt-3 text-muted">
+        {
+          `${SITE.author} is working through the publicly available ${COURSE.editionLabel} recordings of Stanford's ${COURSE.name}, and publishing her original handwritten notes here.`
+        }
+      </p>
+    </div>
+
+    <section>
+      <h2 class="text-xl">Why</h2>
+      <p class="mt-2 text-muted">
+        The notes are kept here so they stay organised and are easy to revisit from any device, and
+        so there is a public record of the learning as it happens. This is a personal study project,
+        not a tutorial or a course replacement.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl">How it works</h2>
+      <p class="mt-2 text-muted">
+        Each note is one handwritten document, scanned and published as a PDF with a short plain
+        description, the topics it covers, and links to the public course source it relates to.
+        Search covers that written metadata only — it does not read the handwriting inside the PDFs.
+      </p>
+      <p class="mt-2 text-muted">
+        Course materials referenced:{' '}
+        <a href={COURSE.syllabusUrl}>{`${COURSE.name} ${COURSE.editionLabel} syllabus`}</a>{' '}
+        and the <a href={COURSE.playlistUrl}>course lecture playlist</a>. This site links to those
+        public resources rather than rehosting Stanford videos, slides, official notes, or
+        assignments.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl">Disclaimer</h2>
+      <p class="mt-2 text-muted">{DISCLAIMER}</p>
+      <p class="mt-2 text-muted">
+        These are a learner's notes. They may contain mistakes, incomplete reasoning, or
+        simplifications, and should not be treated as an authoritative reference.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl">Licensing</h2>
+      <p class="mt-2 text-muted">
+        The source code for this site is released under the{' '}
+        <a href={`${SITE.repoUrl}/blob/main/LICENSE`}>MIT License</a>.{' '}
+        {
+          `The handwritten notes, scanned PDFs, written descriptions, and derived thumbnails are © ${new Date().getFullYear()} ${SITE.author}, all rights reserved`
+        }
+        {' — see the '}
+        <a href={`${SITE.repoUrl}/blob/main/CONTENT-LICENSE.md`}>content license</a>. Downloading a
+        note does not grant republication rights.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-xl">Source</h2>
+      <p class="mt-2 text-muted">
+        The full project — site code and published notes — is on{' '}
+        <a href={SITE.repoUrl}>GitHub</a>.
+      </p>
+      <p class="mt-4">
+        <a
+          href={withBase('/notes')}
+          class="inline-flex items-center gap-2 rounded-md border border-border-strong bg-surface px-4 py-2 font-medium no-underline hover:text-teal"
+        >
+          Browse the note library →
+        </a>
+      </p>
+    </section>
+  </div>
+</BaseLayout>

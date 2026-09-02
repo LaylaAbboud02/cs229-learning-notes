@@ -1,0 +1,88 @@
+---
+import type { PublicNote } from '../../lib/notes';
+import { formatDate } from '../../lib/format';
+import Chip from './Chip.astro';
+import NoteThumbnail from './NoteThumbnail.astro';
+
+interface Props {
+  note: PublicNote;
+}
+
+const { note } = Astro.props;
+const leadLecture = note.relatedLectures[0];
+const extraTopics = Math.max(0, note.topics.length - 2);
+---
+
+<article
+  class="note-card group relative flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-card transition-shadow hover:shadow-card-hover focus-within:shadow-card-hover"
+>
+  <NoteThumbnail src={note.thumbnailUrl} alt={note.title} class="border-b border-border" />
+
+  <div class="flex flex-1 flex-col gap-3 p-4">
+    <div class="flex items-center justify-between gap-3 text-xs text-muted">
+      <span class="flex items-center gap-2">
+        {
+          leadLecture && (
+            <span class="font-mono text-[0.7rem] font-semibold text-ink-soft">
+              {leadLecture.numberLabel}
+            </span>
+          )
+        }
+        <Chip label={note.typeLabel} tone={note.type === 'lecture' ? 'teal' : 'coral'} />
+      </span>
+      <span>{note.pageCount} {note.pageCount === 1 ? 'page' : 'pages'}</span>
+    </div>
+
+    <h3 class="font-serif text-lg leading-snug text-ink">
+      <a href={note.href} class="no-underline after:absolute after:inset-0 after:content-['']">
+        {note.title}
+      </a>
+    </h3>
+
+    <p class="line-clamp-3 text-sm text-muted">{note.description}</p>
+
+    <div class="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1">
+      {note.topics.slice(0, 2).map((topic) => <Chip label={topic} />)}
+      {extraTopics > 0 && <span class="text-xs text-muted">+{extraTopics} more</span>}
+    </div>
+
+    <div
+      class="flex items-center justify-between gap-3 border-t border-border pt-3 text-xs text-muted"
+    >
+      <span class="flex items-center gap-1.5">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+        </svg>
+        <time datetime={note.publishedAt}>{formatDate(note.publishedAt)}</time>
+      </span>
+      <svg
+        class="text-teal transition-transform group-hover:translate-x-0.5"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </div>
+  </div>
+</article>

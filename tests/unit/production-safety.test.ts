@@ -2,10 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 const DIST = join(ROOT, 'dist');
+const ASTRO_BIN = join(ROOT, 'node_modules', '.bin', 'astro');
 
 /** Strings that must never appear anywhere in a production build. */
 const FORBIDDEN = [
@@ -13,6 +14,7 @@ const FORBIDDEN = [
   'demo-problem-set-1',
   'demo-notes',
   'note-fixtures',
+  'Synthetic demo',
   'tests/fixtures',
   'tests\\fixtures',
   '.drafts',
@@ -29,77 +31,100 @@ function walk(dir: string): string[] {
   return out;
 }
 
+function scanDistForForbidden(): string[] {
+  const hits: string[] = [];
+  for (const file of walk(DIST)) {
+    if (!/\.(html|js|mjs|css|json|xml|txt|map)$/.test(file)) continue;
+    const text = readFileSync(file, 'utf8');
+    for (const needle of FORBIDDEN) {
+      if (text.includes(needle)) hits.push(`${file} :: ${needle}`);
+    }
+  }
+  return hits;
+}
+
 describe('published-content sources are clean', () => {
   it('.gitignore excludes the drafts directory', () => {
-    const gitignore = readFileSync(join(ROOT, '.gitignore'), 'utf8');
-    expect(gitignore).toMatch(/^\.drafts\/?$/m);
+    expect(readFileSync(join(ROOT, '.gitignore'), 'utf8')).toMatch(/^\.drafts\/?$/m);
   });
 
   it('src/content/notes/ contains no note Markdown files yet', () => {
     const dir = join(ROOT, 'src', 'content', 'notes');
-    const mdFiles = readdirSync(dir).filter((name) => name.endsWith('.md'));
-    expect(mdFiles).toEqual([]);
+    expect(readdirSync(dir).filter((name) => name.endsWith('.md'))).toEqual([]);
   });
 
-  it('the demo-notes bridge is only reachable behind a static DEV guard', () => {
-    const notesSource = readFileSync(join(ROOT, 'src', 'lib', 'notes.ts'), 'utf8');
-    // The only reference to the fixtures from src/ is the guarded dynamic import.
-    expect(notesSource).toMatch(
-      /if \(import\.meta\.env\.DEV && import\.meta\.env\.PUBLIC_DEMO_NOTES === 'on'\) \{\s*const \{ demoNoteRecords \} = await import\('\.\.\/\.\.\/tests\/fixtures\/demo-notes'\);/,
+  it('the demo-notes bridge is only reachable behind the build-safe guard', () => {
+    const source = readFileSync(join(ROOT, 'src', 'lib', 'notes.ts'), 'utf8');
+    expect(source).toMatch(
+      /if \(import\.meta\.env\.CS229_DEMO_NOTES\) \{\s*const \{ demoNoteRecords \} = await import\('\.\.\/\.\.\/tests\/fixtures\/demo-notes'\);/,
     );
-    expect(notesSource).not.toMatch(/^import .*tests\/fixtures/m);
+    // The guard constant must be defined to a literal false for builds.
+    const integration = readFileSync(join(ROOT, 'src', 'integrations', 'dev-fixtures.ts'), 'utf8');
+    expect(integration).toMatch(/command === 'dev' && process\.env\.PUBLIC_DEMO_NOTES === 'on'/);
+    expect(integration).toContain("'import.meta.env.CS229_DEMO_NOTES'");
   });
 
-  it('no other src/ file imports the test fixtures', () => {
+  it('no src/ file statically imports the test fixtures', () => {
     const offenders: string[] = [];
     for (const file of walk(join(ROOT, 'src'))) {
       if (!/\.(ts|tsx|astro|mjs|js)$/.test(file)) continue;
       const text = readFileSync(file, 'utf8');
-      if (/from ['"].*tests\/fixtures/.test(text) || /import\(['"].*tests\/fixtures/.test(text)) {
-        if (!file.endsWith(join('lib', 'notes.ts'))) offenders.push(file);
-      }
+      if (/(?:from|import\()\s*['"][^'"]*tests\/fixtures/.test(text)) offenders.push(file);
     }
-    expect(offenders).toEqual([]);
+    // Only the guarded dynamic import in notes.ts is allowed.
+    expect(offenders.map((f) => f.replace(ROOT + '/', ''))).toEqual(['src/lib/notes.ts']);
   });
 });
 
 describe('production build output', () => {
   beforeAll(() => {
-    execFileSync(join(ROOT, 'node_modules', '.bin', 'astro'), ['build'], {
-      cwd: ROOT,
-      stdio: 'pipe',
-    });
+    execFileSync(ASTRO_BIN, ['build'], { cwd: ROOT, stdio: 'pipe' });
   }, 180_000);
 
-  afterAll(() => {
-    // Leave dist/ in place; the quality gate's own `pnpm build` will refresh it.
+  it('emits every Phase 3 route', () => {
+    for (const page of [
+      '404.html',
+      'index.html',
+      'about/index.html',
+      'notes/index.html',
+      'lectures/index.html',
+      'exercises/index.html',
+    ]) {
+      expect(existsSync(join(DIST, page)), page).toBe(true);
+    }
   });
 
-  it('builds successfully and emits dist/', () => {
-    expect(existsSync(DIST)).toBe(true);
-    expect(statSync(DIST).isDirectory()).toBe(true);
-  });
-
-  it('contains no /notes/ routes (no published notes yet)', () => {
-    const notesRoute = join(DIST, 'notes');
-    expect(existsSync(notesRoute)).toBe(false);
-  });
-
-  it('emits no demo or fixture assets', () => {
+  it('emits no note-detail routes yet (Phase 4) and no note assets', () => {
+    // The library page exists; nothing deeper under /notes/.
+    const notesEntries = readdirSync(join(DIST, 'notes'));
+    expect(notesEntries).toEqual(['index.html']);
     for (const dir of ['pdfs', 'thumbnails']) {
       expect(existsSync(join(DIST, dir))).toBe(false);
     }
   });
 
-  it('no build artifact references demo notes, fixtures, or drafts', () => {
-    const hits: string[] = [];
-    for (const file of walk(DIST)) {
-      if (!/\.(html|js|mjs|css|json|xml|txt|map)$/.test(file)) continue;
-      const text = readFileSync(file, 'utf8');
-      for (const needle of FORBIDDEN) {
-        if (text.includes(needle)) hits.push(`${file} :: ${needle}`);
-      }
-    }
-    expect(hits).toEqual([]);
+  it('library pages render the intentional empty state, not a filter island', () => {
+    const notesHtml = readFileSync(join(DIST, 'notes', 'index.html'), 'utf8');
+    expect(notesHtml).toContain('Nothing published here yet');
+    expect(notesHtml).not.toContain('data-note-index');
+    expect(notesHtml).not.toContain('data-library-controls');
   });
+
+  it('no build artifact references demo notes, fixtures, or drafts', () => {
+    expect(scanDistForForbidden()).toEqual([]);
+  });
+
+  it('stays clean when built with PUBLIC_DEMO_NOTES=on, even under NODE_ENV=test', () => {
+    // NODE_ENV=test makes Vite's own import.meta.env.DEV true during a build, so
+    // this is the worst case for the demo-notes guard.
+    execFileSync(ASTRO_BIN, ['build'], {
+      cwd: ROOT,
+      stdio: 'pipe',
+      env: { ...process.env, PUBLIC_DEMO_NOTES: 'on', NODE_ENV: 'test' },
+    });
+    expect(scanDistForForbidden()).toEqual([]);
+    expect(statSync(DIST).isDirectory()).toBe(true);
+    // Restore a normal build for any later inspection.
+    execFileSync(ASTRO_BIN, ['build'], { cwd: ROOT, stdio: 'pipe' });
+  }, 180_000);
 });
