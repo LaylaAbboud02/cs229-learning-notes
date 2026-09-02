@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { withBase } from '../lib/base-path';
+
+// A minimal, on-brand error state so the navigation shell degrades gracefully
+// for routes that later phases will add. The richer 404 (with links into the
+// note library) is a Phase 3 deliverable.
+---
+
+<BaseLayout title="Page not found">
+  <section class="max-w-prose">
+    <p class="font-serif text-6xl text-border-strong">404</p>
+    <h1 class="mt-2 text-3xl">This page isn't here</h1>
+    <p class="mt-4 text-muted">The page you're looking for doesn't exist yet or has moved.</p>
+    <p class="mt-6">
+      <a href={withBase('/')} class="underline">Return to the home page</a>
+    </p>
+  </section>
+</BaseLayout>

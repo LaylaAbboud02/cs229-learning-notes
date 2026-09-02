@@ -1,0 +1,11 @@
+dist/
+.astro/
+node_modules/
+coverage/
+pnpm-lock.yaml
+
+# Authored planning documents — not style-managed by this repo's tooling.
+docs/
+CLAUDE.md
+
+*.min.*

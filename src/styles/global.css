@@ -1,0 +1,140 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens — polished light theme only (no dark mode in v1).
+ *
+ * Warm ivory paper, deep ink-navy text, muted teal for interaction, restrained
+ * coral for annotation accents. Values are tuned for WCAG AA contrast on the
+ * paper background; see comments for the measured ratios.
+ */
+@theme {
+  --color-paper: #f7f3ea; /* page background — warm ivory */
+  --color-surface: #fffdf8; /* raised cards / panels */
+  --color-surface-sunk: #f1ece0; /* inset wells, code, track backgrounds */
+
+  --color-ink: #12294a; /* primary text — ~11.9:1 on paper */
+  --color-ink-soft: #33445f; /* secondary headings / strong text */
+  --color-muted: #5b6472; /* metadata / captions — ~5.2:1 on paper */
+
+  --color-teal: #0b6d70; /* interactive text / links — ~5.3:1 on paper */
+  --color-teal-strong: #0f7c80; /* hover, solid fills, progress */
+  --color-teal-soft: #dcebea; /* tag chips, selection, subtle fills */
+
+  --color-coral: #e46f61; /* decorative annotation accent (non-text) */
+  --color-coral-strong: #b8442f; /* coral used as text — ~4.6:1 on paper */
+
+  --color-border: #d9d3c8; /* hairline borders */
+  --color-border-strong: #c4bcab;
+
+  --font-sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+  --font-serif:
+    'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', 'Hoefler Text', Georgia,
+    'Times New Roman', serif;
+
+  --shadow-card: 0 8px 24px rgb(18 41 74 / 0.08);
+  --shadow-card-hover: 0 12px 32px rgb(18 41 74 / 0.12);
+
+  --radius-card: 0.75rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    min-height: 100svh;
+    margin: 0;
+    /* Very subtle paper grid motif. */
+    background-color: var(--color-paper);
+    background-image:
+      linear-gradient(to right, rgb(18 41 74 / 0.028) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(18 41 74 / 0.028) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    color: var(--color-ink);
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  a {
+    color: var(--color-teal);
+    text-underline-offset: 0.15em;
+    text-decoration-thickness: from-font;
+  }
+
+  a:hover {
+    color: var(--color-teal-strong);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-teal);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: var(--color-teal-soft);
+    color: var(--color-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Content width container used by the layout shell. */
+  .shell-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+
+  /* Visible-on-focus skip link. */
+  .skip-link {
+    position: absolute;
+    left: 0.75rem;
+    top: 0.75rem;
+    z-index: 50;
+    transform: translateY(-150%);
+    transition: transform 150ms ease;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border: 1px solid var(--color-border-strong);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.875rem;
+    font-weight: 600;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+}
