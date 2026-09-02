@@ -4,6 +4,8 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
+import notesIntegrity from './src/integrations/notes-integrity';
+
 // Deployed as a GitHub Pages *project* site:
 //   https://laylaabboud02.github.io/cs229-learning-notes
 // `base` must be respected everywhere. Never assume the site is hosted at "/".
@@ -15,7 +17,7 @@ export default defineConfig({
   // Static output only. No SSR, no adapter, no server endpoints.
   output: 'static',
 
-  integrations: [react()],
+  integrations: [react(), notesIntegrity()],
 
   vite: {
     plugins: [tailwindcss()],
