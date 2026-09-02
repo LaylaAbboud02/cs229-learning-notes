@@ -43,4 +43,12 @@ export default tseslint.config(
       globals: { ...globals.node },
     },
   },
+  {
+    // Ambient type declarations: triple-slash references are idiomatic here
+    // (this is how Astro wires its generated types into a project).
+    files: ['**/*.d.ts'],
+    rules: {
+      '@typescript-eslint/triple-slash-reference': 'off',
+    },
+  },
 );

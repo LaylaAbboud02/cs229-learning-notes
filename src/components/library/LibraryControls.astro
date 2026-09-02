@@ -1,0 +1,132 @@
+---
+import type { NoteType } from '../../config/note-types';
+import { NOTE_TYPE_CONFIG } from '../../config/note-types';
+
+interface Props {
+  /** Fixed type for `/lectures` and `/exercises` — hides the type filter. */
+  lockedType?: NoteType;
+  /** Distinct topic labels available for filtering. */
+  topics: string[];
+  /** Server-rendered count (all applicable notes). */
+  totalCount: number;
+  /** Noun used in the result count, e.g. "note", "lecture note". */
+  noun?: string;
+}
+
+const { lockedType, topics, totalCount, noun = 'note' } = Astro.props;
+const typeOptions: { value: 'all' | NoteType; label: string }[] = [
+  { value: 'all', label: 'All' },
+  { value: 'lecture', label: NOTE_TYPE_CONFIG.lecture.pluralLabel },
+  { value: 'exercise', label: NOTE_TYPE_CONFIG.exercise.pluralLabel },
+];
+---
+
+<div
+  class="library-controls flex flex-col gap-4 rounded-card border border-border bg-surface/70 p-4"
+  data-library-controls
+  hidden
+>
+  <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-5">
+    <div class="flex-1">
+      <label for="note-search" class="mb-1 block text-sm font-semibold text-ink-soft">
+        Search notes
+      </label>
+      <div class="relative">
+        <svg
+          class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        >
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          type="search"
+          id="note-search"
+          name="q"
+          autocomplete="off"
+          placeholder="Search titles, topics, lectures…"
+          aria-describedby="search-scope"
+          class="w-full rounded-md border border-border-strong bg-surface py-2 pr-3 pl-9 text-sm text-ink placeholder:text-muted"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label for="note-sort" class="mb-1 block text-sm font-semibold text-ink-soft">Sort by</label>
+      <select
+        id="note-sort"
+        name="sort"
+        class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-ink"
+      >
+        <option value="courseOrder">Course order</option>
+        <option value="newest">Newest first</option>
+      </select>
+    </div>
+
+    {
+      topics.length > 0 && (
+        <div>
+          <label for="note-topic" class="mb-1 block text-sm font-semibold text-ink-soft">
+            Topic
+          </label>
+          <select
+            id="note-topic"
+            name="topic"
+            class="rounded-md border border-border-strong bg-surface px-3 py-2 text-sm text-ink"
+          >
+            <option value="">All topics</option>
+            {topics.map((topic) => (
+              <option value={topic.toLowerCase()}>{topic}</option>
+            ))}
+          </select>
+        </div>
+      )
+    }
+  </div>
+
+  {
+    !lockedType && (
+      <fieldset class="flex flex-wrap items-center gap-2">
+        <legend class="mr-1 text-sm font-semibold text-ink-soft">Type</legend>
+        {typeOptions.map((option, index) => (
+          <label class="type-pill">
+            <input
+              type="radio"
+              name="type"
+              value={option.value}
+              checked={index === 0}
+              class="sr-only"
+            />
+            <span>{option.label}</span>
+          </label>
+        ))}
+      </fieldset>
+    )
+  }
+
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <p id="note-result-count" role="status" aria-live="polite" class="text-sm text-muted">
+      {`${totalCount} ${totalCount === 1 ? noun : `${noun}s`}`}
+    </p>
+    <button
+      type="button"
+      data-clear-filters
+      hidden
+      class="rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm font-medium text-ink-soft hover:text-teal"
+    >
+      Clear filters
+    </button>
+  </div>
+
+  <p id="search-scope" class="text-xs text-muted">
+    Search covers note titles, descriptions, topics, type, and related lecture titles/numbers and
+    source labels. It does <strong>not</strong> read the handwriting or text inside the PDF files.
+  </p>
+</div>

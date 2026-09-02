@@ -1,0 +1,29 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LibraryView from '../components/library/LibraryView.astro';
+import { getListingNotes, filterByType } from '../lib/notes';
+import { pluralize } from '../lib/format';
+
+// Same collection and components as /notes — this page exists only because
+// `exercise` is an active configured note type.
+const exerciseNotes = filterByType(await getListingNotes(), 'exercise');
+---
+
+<BaseLayout
+  title="Exercises"
+  description="Handwritten working for problem sets and practice exercises from the public 2018 Stanford CS229 course."
+>
+  <LibraryView
+    title="Exercise notes"
+    subtitle="Handwritten working for CS229 problem sets and practice exercises, in course order."
+    notes={exerciseNotes}
+    breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Exercises' }]}
+    lockedType="exercise"
+    noun="exercise note"
+    emptyMessage="Exercise notes appear here as CS229 problem sets and practice exercises are worked through."
+  >
+    <p slot="aside" class="text-sm text-muted md:text-right">
+      {pluralize(exerciseNotes.length, 'exercise note')} published
+    </p>
+  </LibraryView>
+</BaseLayout>

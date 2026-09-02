@@ -1,0 +1,30 @@
+---
+import type { PublicNote } from '../../lib/notes';
+import NoteCard from './NoteCard.astro';
+
+interface Props {
+  notes: PublicNote[];
+  id?: string;
+  class?: string;
+}
+
+const { notes, id, class: className } = Astro.props;
+---
+
+<ul id={id} role="list" class:list={['grid gap-5 sm:grid-cols-2 lg:grid-cols-3', className]}>
+  {
+    notes.map((note) => (
+      <li data-note-card data-slug={note.slug}>
+        <NoteCard note={note} />
+      </li>
+    ))
+  }
+</ul>
+
+<script>
+  // A note thumbnail that fails to load is removed so the lined-paper
+  // placeholder behind it shows through instead of a broken-image icon.
+  document.querySelectorAll<HTMLImageElement>('img.note-thumb__img').forEach((img) => {
+    img.addEventListener('error', () => img.remove(), { once: true });
+  });
+</script>

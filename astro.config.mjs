@@ -5,6 +5,7 @@ import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 
 import notesIntegrity from './src/integrations/notes-integrity';
+import devFixtures from './src/integrations/dev-fixtures';
 
 // Deployed as a GitHub Pages *project* site:
 //   https://laylaabboud02.github.io/cs229-learning-notes
@@ -17,7 +18,7 @@ export default defineConfig({
   // Static output only. No SSR, no adapter, no server endpoints.
   output: 'static',
 
-  integrations: [react(), notesIntegrity()],
+  integrations: [react(), notesIntegrity(), devFixtures()],
 
   vite: {
     plugins: [tailwindcss()],

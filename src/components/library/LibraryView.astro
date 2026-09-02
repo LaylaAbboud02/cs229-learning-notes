@@ -1,0 +1,100 @@
+---
+import type { PublicNote } from '../../lib/notes';
+import type { NoteType } from '../../config/note-types';
+import { collectTopics } from '../../lib/notes';
+import { buildNoteIndex } from '../../lib/search';
+import { withBase } from '../../lib/base-path';
+
+import Breadcrumbs from './Breadcrumbs.astro';
+import LibraryControls from './LibraryControls.astro';
+import NoteGrid from './NoteGrid.astro';
+import EmptyState from './EmptyState.astro';
+
+interface Props {
+  title: string;
+  subtitle: string;
+  /** All notes applicable to this view (already type-filtered for /lectures, /exercises). */
+  notes: PublicNote[];
+  breadcrumbs: { label: string; href?: string }[];
+  /** Fixed type for /lectures and /exercises. */
+  lockedType?: NoteType;
+  /** Result-count noun, e.g. "lecture note". */
+  noun?: string;
+  /** Sentence shown in the "nothing published yet" empty state for this view. */
+  emptyMessage?: string;
+}
+
+const {
+  title,
+  subtitle,
+  notes,
+  breadcrumbs,
+  lockedType,
+  noun = 'note',
+  emptyMessage = 'Notes are published here as they are finished.',
+} = Astro.props;
+
+const topics = collectTopics(notes);
+const noteIndex = buildNoteIndex(notes);
+const hasNotes = notes.length > 0;
+---
+
+<div class="flex flex-col gap-6">
+  <Breadcrumbs items={breadcrumbs} />
+
+  <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div class="max-w-2xl">
+      <h1 class="text-3xl sm:text-4xl">{title}</h1>
+      <p class="mt-2 text-muted">{subtitle}</p>
+    </div>
+    <slot name="aside" />
+  </header>
+
+  {
+    hasNotes ? (
+      <div
+        class="flex flex-col gap-5"
+        data-library
+        data-locked-type={lockedType ?? ''}
+        data-noun={noun}
+        data-total={notes.length}
+      >
+        <LibraryControls
+          lockedType={lockedType}
+          topics={topics}
+          totalCount={notes.length}
+          noun={noun}
+        />
+
+        <div data-library-results>
+          <NoteGrid notes={notes} id="note-grid" class="data-[empty]:hidden" />
+          <div data-no-results hidden>
+            <EmptyState title="No notes match those filters">
+              <p>Try a different search term, or clear the filters to see every note again.</p>
+            </EmptyState>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <EmptyState title="Nothing published here yet">
+        <p>
+          {`${emptyMessage} `}
+          <a href={withBase('/about')}>Read about this project</a> to see how it works.
+        </p>
+      </EmptyState>
+    )
+  }
+</div>
+
+{
+  hasNotes && (
+    <script
+      is:inline
+      type="application/json"
+      data-note-index
+      set:html={JSON.stringify(noteIndex)}
+    />
+  )
+}
+
+{hasNotes && <script>import '../../scripts/library-filter';</script>}

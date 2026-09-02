@@ -213,10 +213,18 @@ export function toPublicNoteSet(
  * gitignored `.drafts/`) or test fixtures.
  */
 export async function loadPublishedNotes(): Promise<PublicNote[]> {
-  const [{ getCollection }, { existsSync }] = await Promise.all([
-    import('astro:content'),
-    import('node:fs'),
-  ]);
+  const { existsSync, readdirSync } = await import('node:fs');
+  const { fileURLToPath } = await import('node:url');
+
+  // `src/content/notes/` is empty until real notes are imported. Skip
+  // `getCollection` in that case — Astro logs a noisy "collection is empty"
+  // warning for every page that queries an empty collection.
+  const notesDir = fileURLToPath(new URL('../content/notes', import.meta.url));
+  const hasNoteFiles =
+    existsSync(notesDir) && readdirSync(notesDir).some((name) => name.endsWith('.md'));
+  if (!hasNoteFiles) return [];
+
+  const { getCollection } = await import('astro:content');
   const entries = await getCollection('notes');
   const records: NoteRecord[] = entries.map((entry) => ({
     slug: entry.id,
@@ -229,15 +237,18 @@ export async function loadPublishedNotes(): Promise<PublicNote[]> {
 /**
  * Notes for listing pages. In production this is exactly the published set.
  *
- * In `astro dev`, when `PUBLIC_DEMO_NOTES=on`, it also merges the synthetic demo
- * notes kept under `tests/`. The guard is a static `import.meta.env.DEV` check,
- * so the dynamic import and everything it references are removed from the
- * production bundle — demo data cannot reach a build.
+ * In `astro dev` started with `PUBLIC_DEMO_NOTES=on`, it also merges the
+ * synthetic demo notes kept under `tests/`. The guard is
+ * `import.meta.env.CS229_DEMO_NOTES`, a constant that the `cs229:dev-fixtures`
+ * integration defines as a literal `false` for every `astro build` (see that
+ * file for why `import.meta.env.DEV` is not safe here). The dynamic import and
+ * everything it references are therefore removed from every build — demo data
+ * cannot reach production output.
  */
 export async function getListingNotes(): Promise<PublicNote[]> {
   const published = await loadPublishedNotes();
 
-  if (import.meta.env.DEV && import.meta.env.PUBLIC_DEMO_NOTES === 'on') {
+  if (import.meta.env.CS229_DEMO_NOTES) {
     const { demoNoteRecords } = await import('../../tests/fixtures/demo-notes');
     return sortByCourseOrder([
       ...published,

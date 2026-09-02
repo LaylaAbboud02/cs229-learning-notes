@@ -1,0 +1,25 @@
+---
+interface Props {
+  label: string;
+  tone?: 'teal' | 'coral' | 'neutral';
+  class?: string;
+}
+
+const { label, tone = 'neutral', class: className } = Astro.props;
+
+const toneClass = {
+  teal: 'bg-teal-soft text-teal',
+  coral: 'bg-[color-mix(in_srgb,var(--color-coral)_18%,var(--color-surface))] text-coral-strong',
+  neutral: 'bg-surface-sunk text-ink-soft',
+}[tone];
+---
+
+<span
+  class:list={[
+    'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap',
+    toneClass,
+    className,
+  ]}
+>
+  {label}
+</span>

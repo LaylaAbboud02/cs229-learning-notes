@@ -1,10 +1,9 @@
 /**
- * Site identity and the primary navigation shell.
+ * Site identity and the primary navigation.
  *
- * This is deliberately minimal for Phase 1. Course configuration (edition,
- * lecture registry, watched-lecture IDs, syllabus/playlist source links) and the
- * note-type registry are introduced in Phase 2 as `src/config/course.ts` and
- * `src/config/note-types.ts`.
+ * Course configuration (edition, lecture registry, watched-lecture IDs,
+ * syllabus/playlist links) lives in `src/config/course.ts`; the note-type
+ * registry in `src/config/note-types.ts`.
  */
 
 export const SITE = {
@@ -16,9 +15,7 @@ export const SITE = {
   repoUrl: 'https://github.com/LaylaAbboud02/cs229-learning-notes',
 } as const;
 
-/**
- * Standard non-affiliation disclaimer. Must appear on every page.
- */
+/** Standard non-affiliation disclaimer. Must appear on every page. */
 export const DISCLAIMER =
   'Unofficial personal learning notes. Not affiliated with or endorsed by Stanford University.';
 
@@ -28,10 +25,7 @@ export interface NavItem {
   readonly href: string;
 }
 
-/**
- * Primary navigation. Targets beyond `/` are generated in later phases
- * (`/notes`, `/lectures`, `/exercises` in Phase 3; `/about` in Phase 3).
- */
+/** Primary navigation. Every target is a real Phase 3 route. */
 export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Notes', href: '/notes' },
