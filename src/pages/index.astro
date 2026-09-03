@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProgressBar from '../components/library/ProgressBar.astro';
 import NoteGrid from '../components/library/NoteGrid.astro';
 import EmptyState from '../components/library/EmptyState.astro';
-import { SITE, DISCLAIMER } from '../config/site';
+import { SITE } from '../config/site';
 import { withBase } from '../lib/base-path';
 import { getListingNotes, featuredNotes, sortByNewest } from '../lib/notes';
 import { pluralize } from '../lib/format';
@@ -58,7 +58,6 @@ const exerciseCount = notes.filter((n) => n.type === 'exercise').length;
         </svg>
 
         <p class="mt-6 max-w-prose text-muted">{SITE.description}</p>
-        <p class="mt-3 max-w-prose text-sm text-muted">{DISCLAIMER}</p>
 
         <a
           href={withBase('/notes')}

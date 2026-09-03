@@ -105,8 +105,12 @@ test.describe('production note-detail route', () => {
     expect(await headContent(page, 'meta[property="og:url"]')).toBe(canonical);
     expect(await headContent(page, 'meta[property="og:type"]')).toBe('article');
 
+    // The note-detail page keeps the non-affiliation disclaimer in its own
+    // metadata panel (main content), not only in the shared footer.
     await expect(
-      page.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i).first(),
+      page
+        .locator('main#main')
+        .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /Licensing/i }).first()).toBeVisible();
     // Note content is CC BY 4.0, linked to the canonical license URL.

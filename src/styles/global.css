@@ -51,7 +51,15 @@
   }
 
   body {
+    /* Sticky-footer shell: a full-viewport flex column so the footer rests at
+       the bottom edge on short pages (e.g. an empty /exercises or the 404) and
+       still follows the content in normal flow on long ones. `svh` keeps the
+       footer reachable when mobile browser chrome is expanded; `vh` is the
+       fallback for engines without small-viewport units. */
+    min-height: 100vh;
     min-height: 100svh;
+    display: flex;
+    flex-direction: column;
     margin: 0;
     /* Very subtle paper grid motif. */
     background-color: var(--color-paper);
@@ -59,6 +67,12 @@
       linear-gradient(to right, rgb(18 41 74 / 0.028) 1px, transparent 1px),
       linear-gradient(to bottom, rgb(18 41 74 / 0.028) 1px, transparent 1px);
     background-size: 30px 30px;
+  }
+
+  /* The main landmark grows to absorb spare vertical space (pushing the footer
+     down) but never shrinks below its content, so tall pages scroll normally. */
+  #main {
+    flex: 1 0 auto;
   }
 
   h1,

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   BASE_PATH,
@@ -46,11 +46,12 @@ test.describe('core pages', () => {
       expect(response?.status()).toBe(200);
 
       await expect(page.locator('h1')).toHaveText(page_.h1);
-      // Non-affiliation disclaimer (first-person voice) is present on every page.
+      // The non-affiliation disclaimer lives in the footer on every page (the
+      // hero no longer repeats it on the home page).
       await expect(
         page
-          .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i)
-          .first(),
+          .locator('footer')
+          .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
       ).toBeVisible();
 
       // Canonical + og:url + twitter card
@@ -114,10 +115,35 @@ test.describe('site copy and content licensing', () => {
 
     // No third-person "she/her" biography leaked onto the home page.
     expect(html).not.toMatch(/\bpublishing her\b/i);
+  });
 
-    // The non-affiliation disclaimer still survives on the home page.
+  test('the home page keeps its description but drops the hero non-affiliation line', async ({
+    page,
+  }) => {
+    await page.goto('');
+    const main = page.locator('main#main');
+    const footer = page.locator('footer');
+
+    // The handwritten-notes description stays in the hero.
+    await expect(main.getByText(/shared as I work through the course/i)).toBeVisible();
+
+    // The non-affiliation disclaimer is no longer rendered inside the main
+    // content of the home page...
     await expect(
-      page.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i).first(),
+      main.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
+    ).toHaveCount(0);
+    // ...but it still appears in the global footer.
+    await expect(
+      footer.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
+    ).toBeVisible();
+  });
+
+  test('the disclaimer still renders in-content on the About page', async ({ page }) => {
+    await page.goto('about/');
+    await expect(
+      page
+        .locator('main#main')
+        .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
     ).toBeVisible();
   });
 
@@ -167,6 +193,113 @@ test.describe('site copy and content licensing', () => {
         expect(text, `${name} still shows "${stale}"`).not.toContain(stale);
       }
     }
+  });
+});
+
+test.describe('sticky footer layout', () => {
+  const DESKTOP = { width: 1440, height: 900 };
+  const MOBILE = MOBILE_VIEWPORT; // 375 x 812
+
+  // A short/empty page, the 404, the standard pages, and a long note-detail page.
+  const LAYOUT_PAGES = [
+    { path: 'exercises/', name: 'Exercises (empty state)' },
+    { path: 'this-route-does-not-exist/', name: '404' },
+    { path: '', name: 'Home' },
+    { path: 'about/', name: 'About' },
+    { path: 'notes/', name: 'Notes' },
+    { path: 'notes/linear-regression-and-gradient-descent/', name: 'Note detail (long)' },
+  ] as const;
+
+  /** Geometry of the layout shell at the current viewport. */
+  async function shell(page: Page) {
+    return page.evaluate(() => {
+      const main = document.querySelector('#main')!.getBoundingClientRect();
+      const footer = document.querySelector('footer')!.getBoundingClientRect();
+      const doc = document.documentElement;
+      return {
+        viewportH: window.innerHeight,
+        viewportW: window.innerWidth,
+        scrollH: doc.scrollHeight,
+        clientW: doc.clientWidth,
+        scrollW: doc.scrollWidth,
+        mainBottom: main.bottom,
+        footerTop: footer.top,
+        footerBottom: footer.bottom,
+      };
+    });
+  }
+
+  for (const viewport of [DESKTOP, MOBILE]) {
+    const label = `${viewport.width}x${viewport.height}`;
+
+    for (const { path, name } of LAYOUT_PAGES) {
+      test(`${name} @ ${label}: footer sits after content, no overlap, no overflow`, async ({
+        page,
+      }) => {
+        await page.setViewportSize(viewport);
+        await page.goto(path);
+        // Let the client-only reader settle on the note page.
+        if (path.startsWith('notes/') && path !== 'notes/') {
+          await page.locator('.react-pdf__Page__canvas').first().waitFor({ timeout: 15_000 });
+        }
+
+        const s = await shell(page);
+
+        // 1. Footer never overlaps the main content — it comes after it in flow.
+        expect(s.footerTop, `${name} @ ${label}: footer overlaps main`).toBeGreaterThanOrEqual(
+          s.mainBottom - 1,
+        );
+
+        // 2. No page-level horizontal overflow.
+        expect(s.scrollW, `${name} @ ${label}: horizontal overflow`).toBeLessThanOrEqual(
+          s.clientW + 1,
+        );
+
+        // 3. Short page → footer rests on the viewport bottom edge.
+        //    Long page → footer is below the fold, after the full content.
+        const fitsViewport = s.scrollH <= s.viewportH + 2;
+        if (fitsViewport) {
+          expect(
+            Math.abs(s.footerBottom - s.viewportH),
+            `${name} @ ${label}: footer not flush with viewport bottom`,
+          ).toBeLessThanOrEqual(2);
+        } else {
+          expect(
+            s.footerBottom,
+            `${name} @ ${label}: long page footer should be past the fold`,
+          ).toBeGreaterThan(s.viewportH);
+        }
+      });
+    }
+  }
+
+  test('the empty /exercises page pins the footer to the desktop viewport bottom', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('exercises/');
+
+    await expect(page.getByText('Nothing published here yet')).toBeVisible();
+
+    const s = await shell(page);
+    // This is the reported bug: with little content the footer used to float
+    // partway up. It must now reach the bottom edge (±2px).
+    expect(s.scrollH).toBeLessThanOrEqual(s.viewportH + 2);
+    expect(Math.abs(s.footerBottom - s.viewportH)).toBeLessThanOrEqual(2);
+    expect(s.footerTop).toBeGreaterThanOrEqual(s.mainBottom - 1);
+  });
+
+  test('a long note page keeps the footer in normal flow below the content', async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await page.goto('notes/linear-regression-and-gradient-descent/');
+    await page.locator('.react-pdf__Page__canvas').first().waitFor({ timeout: 15_000 });
+
+    const s = await shell(page);
+    expect(s.scrollH, 'note page should exceed the viewport').toBeGreaterThan(s.viewportH);
+    expect(s.footerTop, 'footer should follow the main content').toBeGreaterThanOrEqual(
+      s.mainBottom - 1,
+    );
+    expect(s.scrollW).toBeLessThanOrEqual(s.clientW + 1);
   });
 });
 
