@@ -1,14 +1,33 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
+import { basename, join, relative, sep } from 'node:path';
 
+import matter from 'gray-matter';
 import { beforeAll, describe, expect, it } from 'vitest';
+
+import { type NoteType } from '../../src/config/note-types';
+import { pdfPathFor, thumbnailPathFor } from '../../src/lib/assets';
+import { parseNoteFrontmatter } from '../../src/lib/note-schema';
+import { collectNoteFiles } from '../../src/lib/publishing/note-files';
+import { isValidSlug } from '../../src/lib/publishing/slug';
+import { validateNoteRepository } from '../../src/lib/publishing/validation';
+import { demoNoteRecords } from '../fixtures/demo-notes';
 
 const ROOT = join(import.meta.dirname, '..', '..');
 const DIST = join(ROOT, 'dist');
+const NOTES_DIR = join(ROOT, 'src', 'content', 'notes');
 const ASTRO_BIN = join(ROOT, 'node_modules', '.bin', 'astro');
 
-/** Strings that must never appear anywhere in a production build. */
+const SITE_ORIGIN = 'https://laylaabboud02.github.io';
+const BASE_PATH = '/cs229-learning-notes';
+
+/** Slugs that must never appear as a real published note. */
+const DEMO_SLUGS = new Set(demoNoteRecords.map((n) => n.slug));
+
+/**
+ * Strings that must never appear anywhere in a production build. Permanent
+ * demo / draft / fixture / placeholder safeguards — do not weaken for real notes.
+ */
 const FORBIDDEN = [
   'demo-linear-regression',
   'demo-problem-set-1',
@@ -18,6 +37,7 @@ const FORBIDDEN = [
   'tests/fixtures',
   'tests\\fixtures',
   '.drafts',
+  'test-title',
   'PUBLIC_DEMO_NOTES',
   'CS229_DEMO_NOTES',
   'CS229_DEMO_PREVIEW',
@@ -25,6 +45,7 @@ const FORBIDDEN = [
 ];
 
 function walk(dir: string): string[] {
+  if (!existsSync(dir)) return [];
   const out: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const full = join(dir, entry.name);
@@ -46,14 +67,74 @@ function scanDistForForbidden(): string[] {
   return hits;
 }
 
+interface PublishedNote {
+  readonly slug: string;
+  readonly title: string;
+  readonly type: NoteType;
+  /** Base-independent asset paths, from the shared helpers. */
+  readonly pdfPath: string;
+  readonly thumbnailPath: string;
+}
+
+/**
+ * The published-note set, derived from `src/content/notes/*.md` using the same
+ * parsing, schema, and note-type helpers the site and the CLI use — never a
+ * second content model. Throws (failing the test) on a malformed note file.
+ * Returns `[]` when the collection is empty, which is a valid state.
+ */
+function readPublishedNotes(): PublishedNote[] {
+  const { topLevel, nested } = collectNoteFiles(NOTES_DIR);
+  if (nested.length > 0) {
+    throw new Error(
+      `nested Markdown note file(s): ${nested.map((f) => relative(ROOT, f)).join(', ')}`,
+    );
+  }
+
+  return topLevel
+    .map((file) => {
+      const slug = basename(file, '.md');
+      const parsed = parseNoteFrontmatter(matter(readFileSync(file, 'utf8')).data ?? {});
+      if (!parsed.success || parsed.data === undefined) {
+        throw new Error(
+          `${slug}.md failed schema validation: ${JSON.stringify(parsed.error?.issues)}`,
+        );
+      }
+      const type: NoteType = parsed.data.type;
+      return {
+        slug,
+        title: parsed.data.title,
+        type,
+        pdfPath: pdfPathFor(type, slug),
+        thumbnailPath: thumbnailPathFor(type, slug),
+      } satisfies PublishedNote;
+    })
+    .sort((a, b) => a.slug.localeCompare(b.slug));
+}
+
 describe('published-content sources are clean', () => {
   it('.gitignore excludes the drafts directory', () => {
     expect(readFileSync(join(ROOT, '.gitignore'), 'utf8')).toMatch(/^\.drafts\/?$/m);
   });
 
-  it('src/content/notes/ contains no note Markdown files yet', () => {
-    const dir = join(ROOT, 'src', 'content', 'notes');
-    expect(readdirSync(dir).filter((name) => name.endsWith('.md'))).toEqual([]);
+  it('src/content/notes/ contains only valid, canonical, non-demo note files', async () => {
+    const { topLevel } = collectNoteFiles(NOTES_DIR);
+
+    for (const file of topLevel) {
+      const slug = basename(file, '.md');
+      expect(isValidSlug(slug), `${slug}: canonical slug format`).toBe(true);
+      expect(DEMO_SLUGS.has(slug), `${slug}: not a demo slug`).toBe(false);
+      expect(slug.startsWith('demo-'), `${slug}: not a demo slug`).toBe(false);
+      expect(slug.includes('test-title'), `${slug}: not a test-title artifact`).toBe(false);
+
+      const parsed = parseNoteFrontmatter(matter(readFileSync(file, 'utf8')).data ?? {});
+      expect(parsed.success, `${slug}: ${JSON.stringify(parsed.error?.issues)}`).toBe(true);
+    }
+
+    // The shared repository validator — the same one `pnpm validate-notes` and
+    // the build integrity check run — must pass for the real collection.
+    const report = await validateNoteRepository({ root: ROOT });
+    expect(report.errors, JSON.stringify(report.errors)).toEqual([]);
+    expect(report.ok).toBe(true);
   });
 
   it('the demo-notes bridge is only reachable behind the build-safe guard', () => {
@@ -94,11 +175,14 @@ describe('published-content sources are clean', () => {
 });
 
 describe('production build output', () => {
+  let notes: PublishedNote[];
+
   beforeAll(() => {
     execFileSync(ASTRO_BIN, ['build'], { cwd: ROOT, stdio: 'pipe' });
+    notes = readPublishedNotes();
   }, 180_000);
 
-  it('emits every Phase 3 route', () => {
+  it('emits every top-level route', () => {
     for (const page of [
       '404.html',
       'index.html',
@@ -111,25 +195,77 @@ describe('production build output', () => {
     }
   });
 
-  it('emits no note-detail routes and no note assets (there are no notes yet)', () => {
-    // The library page exists; nothing deeper under /notes/.
-    const notesEntries = readdirSync(join(DIST, 'notes'));
-    expect(notesEntries).toEqual(['index.html']);
-    for (const dir of ['pdfs', 'thumbnails']) {
-      expect(existsSync(join(DIST, dir))).toBe(false);
+  it('emits exactly one note-detail route per published note (and nothing else under /notes/)', () => {
+    const entries = readdirSync(join(DIST, 'notes'), { withFileTypes: true });
+    const files = entries
+      .filter((e) => e.isFile())
+      .map((e) => e.name)
+      .sort();
+    const dirs = entries
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
+      .sort();
+
+    expect(files).toEqual(['index.html']);
+    expect(dirs).toEqual(notes.map((n) => n.slug));
+    for (const dir of dirs) {
+      expect(existsSync(join(DIST, 'notes', dir, 'index.html')), dir).toBe(true);
     }
   });
 
-  it('no rendered page loads the React-PDF reader in a normal build', () => {
-    const readerRefs: string[] = [];
-    for (const file of walk(DIST)) {
-      if (!file.endsWith('.html')) continue;
-      const text = readFileSync(file, 'utf8');
-      if (/_astro\/(PdfReader|pdf\.worker)[^"']*\.(js|mjs)/.test(text)) {
-        readerRefs.push(file.replace(`${DIST}/`, ''));
-      }
+  it('emits exactly one public PDF and thumbnail per published note, in its type directory', () => {
+    const expectedPdf = new Set(notes.map((n) => n.pdfPath));
+    const expectedThumb = new Set(notes.map((n) => n.thumbnailPath));
+
+    const actualUnder = (dir: string, prefix: string) =>
+      new Set(
+        walk(join(DIST, dir)).map(
+          (f) => `${prefix}/${relative(join(DIST, dir), f).split(sep).join('/')}`,
+        ),
+      );
+
+    if (notes.length === 0) {
+      expect(existsSync(join(DIST, 'pdfs'))).toBe(false);
+      expect(existsSync(join(DIST, 'thumbnails'))).toBe(false);
+      return;
     }
-    expect(readerRefs).toEqual([]);
+
+    expect(actualUnder('pdfs', '/pdfs')).toEqual(expectedPdf);
+    expect(actualUnder('thumbnails', '/thumbnails')).toEqual(expectedThumb);
+    // Every emitted asset stem is a published slug (no demo / test-title assets).
+    for (const f of [
+      ...actualUnder('pdfs', '/pdfs'),
+      ...actualUnder('thumbnails', '/thumbnails'),
+    ]) {
+      const stem = basename(f).replace(/\.(pdf|webp)$/, '');
+      expect(
+        notes.some((n) => n.slug === stem),
+        `orphan asset ${f}`,
+      ).toBe(true);
+    }
+  });
+
+  it('references the React-PDF reader bundle only from note-detail pages', () => {
+    const readerHtml = walk(DIST)
+      .filter((f) => f.endsWith('.html'))
+      .filter((f) =>
+        /_astro\/(PdfReader|pdf\.worker)[^"']*\.(js|mjs)/.test(readFileSync(f, 'utf8')),
+      )
+      .map((f) => relative(DIST, f).split(sep).join('/'))
+      .sort();
+
+    expect(readerHtml).toEqual(notes.map((n) => `notes/${n.slug}/index.html`));
+
+    for (const page of [
+      'index.html',
+      '404.html',
+      'about/index.html',
+      'notes/index.html',
+      'lectures/index.html',
+      'exercises/index.html',
+    ]) {
+      expect(readerHtml, `${page} must not load the reader`).not.toContain(page);
+    }
   });
 
   it('the test-only demo preview builds demo routes into a separate dir and never touches dist/', () => {
@@ -156,14 +292,36 @@ describe('production build output', () => {
     }
   }, 180_000);
 
-  it('library pages render the intentional empty state, not a filter island', () => {
-    const notesHtml = readFileSync(join(DIST, 'notes', 'index.html'), 'utf8');
-    expect(notesHtml).toContain('Nothing published here yet');
-    expect(notesHtml).not.toContain('data-note-index');
-    expect(notesHtml).not.toContain('data-library-controls');
+  it('the /notes library reflects the published set', () => {
+    const html = readFileSync(join(DIST, 'notes', 'index.html'), 'utf8');
+
+    if (notes.length === 0) {
+      expect(html).toContain('Nothing published here yet');
+      expect(html).not.toContain('data-note-index');
+      expect(html).not.toContain('data-library-controls');
+      return;
+    }
+
+    expect(html).not.toContain('Nothing published here yet');
+    expect(html).toContain('data-note-index');
+    expect(html).toContain('data-library-controls');
+    for (const note of notes) {
+      expect(html, `${note.slug} card`).toContain(`data-slug="${note.slug}"`);
+    }
   });
 
-  it('no build artifact references demo notes, fixtures, or drafts', () => {
+  it('the sitemap lists every published note route and excludes the 404 route', () => {
+    const sitemap = readFileSync(join(DIST, 'sitemap-0.xml'), 'utf8');
+    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+    expect(locs).toContain(`${SITE_ORIGIN}${BASE_PATH}/notes/`);
+    for (const note of notes) {
+      expect(locs).toContain(`${SITE_ORIGIN}${BASE_PATH}/notes/${note.slug}/`);
+    }
+    expect(locs).not.toContain(`${SITE_ORIGIN}${BASE_PATH}/404/`);
+  });
+
+  it('no build artifact references demo notes, fixtures, drafts, or test-title', () => {
     expect(scanDistForForbidden()).toEqual([]);
   });
 
