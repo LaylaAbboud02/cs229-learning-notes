@@ -101,8 +101,12 @@ test.describe('custom 404', () => {
 
   test('is excluded from the sitemap', async ({ page }) => {
     const sitemap = await (await page.request.get(`${BASE_PATH}/sitemap-0.xml`)).text();
-    expect(sitemap).toContain(`${SITE_ORIGIN}${BASE_PATH}/notes/`);
-    expect(sitemap).not.toContain('/404');
+    const locs = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+    // The /notes listing page is present; the 404 route is not — matched exactly,
+    // so a real note slug that merely contains "404" is not rejected.
+    expect(locs).toContain(`${SITE_ORIGIN}${BASE_PATH}/notes/`);
+    expect(locs).not.toContain(`${SITE_ORIGIN}${BASE_PATH}/404/`);
   });
 });
 

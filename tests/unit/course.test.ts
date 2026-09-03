@@ -70,18 +70,18 @@ describe('CS229 2018 course configuration', () => {
 });
 
 describe('watched-lecture tracking', () => {
-  it('is initialized with lectures 1 and 2', () => {
-    expect([...COURSE.watchedLectureIds]).toEqual([1, 2]);
+  it('tracks the hand-maintained watched-lecture id set', () => {
+    expect([...COURSE.watchedLectureIds]).toEqual([1, 2, 3]);
   });
 
   it('derives the watched count from the id set', () => {
-    expect(watchedLectureCount()).toBe(2);
+    expect(watchedLectureCount()).toBe(3);
   });
 
-  it('reports progress as 2 of 20', () => {
+  it('reports progress as 3 of 20', () => {
     const progress = courseProgress();
-    expect(progress).toMatchObject({ watched: 2, total: 20, percent: 10 });
-    expect(progress.fraction).toBeCloseTo(0.1);
+    expect(progress).toMatchObject({ watched: 3, total: 20, percent: 15 });
+    expect(progress.fraction).toBeCloseTo(0.15);
   });
 });
 

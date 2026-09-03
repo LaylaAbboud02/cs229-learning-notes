@@ -38,7 +38,10 @@ export default defineConfig({
   projects: [
     {
       name: 'site',
-      testMatch: /site\.spec\.ts$/,
+      // The production build: the static pages plus a real note-detail route
+      // once `src/content/notes/` has content (real-notes.spec.ts self-skips
+      // while it is empty).
+      testMatch: /(site|real-notes)\.spec\.ts$/,
       use: { ...devices['Desktop Chrome'], baseURL: SITE_BASE },
     },
     {

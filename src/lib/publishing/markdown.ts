@@ -41,6 +41,7 @@ function orderedFrontmatter(record: NoteRecord): Record<string, unknown> {
  * version one carries all information in frontmatter.
  */
 export function serializeNoteMarkdown(record: NoteRecord): string {
-  const yaml = matter.stringify('', orderedFrontmatter(record));
-  return yaml.endsWith('\n') ? yaml : `${yaml}\n`;
+  // `gray-matter` emits `---\n…\n---\n\n` for empty content; collapse the trailing
+  // blank line so the file passes `prettier --check` (single trailing newline).
+  return `${matter.stringify('', orderedFrontmatter(record)).replace(/\s*$/, '')}\n`;
 }

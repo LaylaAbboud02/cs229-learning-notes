@@ -15,7 +15,7 @@ replacement, a CMS, or a collaborative upload platform.
 
 ## Status
 
-**Phase 6 of 7 — CI, GitHub Pages deployment, and final polish.**
+**Phase 7 of 7 — first published notes.**
 
 In place now:
 
@@ -32,8 +32,11 @@ In place now:
   GitHub Pages deployment workflow
 - Sitemap, base-aware canonical / Open Graph / Twitter metadata, and an original
   social-sharing image
+- The first handwritten lecture notes — CS229 Lectures 1 and 2 — as published
+  entries, added with `pnpm add-note`
 
-Not yet built: the first real note content (Phase 7). See
+Adding more notes is the ongoing workflow described below; see
+[`docs/PUBLISHING_WORKFLOW.md`](./docs/PUBLISHING_WORKFLOW.md) and
 [`docs/IMPLEMENTATION_PLAN.md`](./docs/IMPLEMENTATION_PLAN.md).
 
 ## Prerequisites
@@ -184,19 +187,15 @@ normal `dist/` output — never `dist-demo/`, `.drafts/`, tests, or design
 references, and never with demo fixtures enabled. Overlapping Pages deployments
 are prevented by a workflow concurrency group.
 
-### One-time GitHub setting (do this manually)
+### One-time GitHub setting
 
-In the repository: **Settings → Pages → Build and deployment → Source →
-“GitHub Actions.”** A maintainer sets this once; it cannot be done from a
-workflow or a pull request.
-
-**Set it after the Phase 6 pull request is approved but before it is merged.**
-Merging the PR pushes to `main`, which triggers `deploy.yml` immediately — if the
-Pages source is still “Deploy from a branch” at that moment, that first
-deployment fails at the deploy step (the build and all checks still pass).
-Setting the source to “GitHub Actions” first makes the first post-merge
-deployment succeed. After that, every push to `main` deploys automatically and
-the deployed URL shows on the workflow run under the `github-pages` environment.
+**Settings → Pages → Build and deployment → Source → “GitHub Actions”** — done
+once, by a maintainer; it cannot be set from a workflow or a pull request. It is
+already configured for this repository, so every push to `main` deploys
+automatically and the deployed URL shows on the workflow run under the
+`github-pages` environment. A fresh fork would need to set this before its first
+push to `main` (otherwise that first deploy fails at the deploy step while the
+build and all checks still pass).
 
 Optional (defence in depth, not required): restrict the `github-pages`
 environment to the `main` branch under **Settings → Environments**, and enable

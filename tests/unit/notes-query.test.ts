@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   collectTopics,
+  featuredNotes,
   filterByTopic,
   filterByType,
   sortByCourseOrder,
@@ -44,6 +45,44 @@ describe('sortByNewest', () => {
       makeRecord({ slug: 'mid', publishedAt: '2026-03-01' }),
     ];
     expect(sortByNewest(notes).map((n) => n.slug)).toEqual(['new', 'mid', 'old']);
+  });
+});
+
+describe('featuredNotes', () => {
+  it('selects only notes flagged featured, in course order', () => {
+    const notes = [
+      makeRecord({ slug: 'c', courseOrder: 30, featured: true }),
+      makeRecord({ slug: 'a', courseOrder: 10, featured: true }),
+      makeRecord({ slug: 'b', courseOrder: 20, featured: false }),
+      makeRecord({ slug: 'd', courseOrder: 40, featured: true }),
+    ];
+    expect(featuredNotes(notes).map((n) => n.slug)).toEqual(['a', 'c', 'd']);
+  });
+
+  it('excludes an unfeatured note', () => {
+    const notes = [
+      makeRecord({ slug: 'plain', featured: false }),
+      makeRecord({ slug: 'starred', featured: true }),
+    ];
+    const slugs = featuredNotes(notes).map((n) => n.slug);
+    expect(slugs).toContain('starred');
+    expect(slugs).not.toContain('plain');
+  });
+
+  it('is empty when nothing is featured', () => {
+    expect(
+      featuredNotes([makeRecord({ featured: false }), makeRecord({ featured: false })]),
+    ).toEqual([]);
+  });
+
+  it('does not mutate its input', () => {
+    const notes = [
+      makeRecord({ courseOrder: 20, featured: true }),
+      makeRecord({ courseOrder: 10, featured: true }),
+    ];
+    const before = notes.map((n) => n.slug);
+    featuredNotes(notes);
+    expect(notes.map((n) => n.slug)).toEqual(before);
   });
 });
 
