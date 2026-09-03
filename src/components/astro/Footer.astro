@@ -1,10 +1,10 @@
 ---
-import { SITE, DISCLAIMER } from '../../config/site';
+import { SITE, DISCLAIMER, CONTENT_LICENSE_URL } from '../../config/site';
 
 const year = new Date().getFullYear();
 const codeLicenseUrl = `${SITE.repoUrl}/blob/main/LICENSE`;
 const contentLicenseUrl = `${SITE.repoUrl}/blob/main/CONTENT-LICENSE.md`;
-const contentCopyright = `© ${year} ${SITE.author} — all rights reserved.`;
+const contentCopyright = `© ${year} ${SITE.author}, licensed under CC BY 4.0.`;
 ---
 
 <footer class="mt-16 border-t border-border bg-surface-sunk">
@@ -12,10 +12,11 @@ const contentCopyright = `© ${year} ${SITE.author} — all rights reserved.`;
     <p class="max-w-prose font-medium text-ink-soft">{DISCLAIMER}</p>
 
     <p class="max-w-prose">
-      Source code is licensed <a href={codeLicenseUrl} class="underline">MIT</a>. The original
+      Source code is licensed <a href={codeLicenseUrl} class="underline">MIT</a>. My original
       handwritten notes, scanned PDFs, written descriptions, and derived thumbnails are
       {` ${contentCopyright} `}
-      Downloading a note does not grant republication rights. See the{' '}
+      You're free to share and adapt them with credit — see the{' '}
+      <a href={CONTENT_LICENSE_URL} class="underline">CC BY 4.0 terms</a> and the{' '}
       <a href={contentLicenseUrl} class="underline">content license</a>.
     </p>
 

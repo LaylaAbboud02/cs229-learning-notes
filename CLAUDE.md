@@ -35,7 +35,7 @@ Use the images in `docs/design-references/` as visual direction if that director
 14. Keep incomplete note drafts under the gitignored `.drafts/` directory. A public repository means a committed draft is not private.
 15. Never delete or modify the source PDF supplied to the import command. Work from a copy.
 16. Exclude draft records from production output, the sitemap, search data, and generated routes.
-17. Preserve the copyright split: code is MIT; original note content and derived thumbnails are all rights reserved.
+17. Preserve the licensing split: code is MIT; original note content and derived thumbnails are Creative Commons Attribution 4.0 (CC BY 4.0). The root `LICENSE` file stays as the MIT source-code license.
 18. Do not use Stanford logos or imply Stanford endorsement or affiliation.
 19. The repository already contains planning files. If the Astro generator refuses a non-empty directory, scaffold in a safe temporary directory and merge the generated files without overwriting the planning documents.
 

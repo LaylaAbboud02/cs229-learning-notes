@@ -10,14 +10,21 @@ export const SITE = {
   name: 'CS229 Learning Notes',
   tagline: 'Machine learning, worked through by hand.',
   description:
-    'A public, unofficial archive of handwritten learning notes for the public 2018 Stanford CS229 lecture series.',
+    "My handwritten notes from Stanford's public 2018 CS229 machine-learning lectures, shared as I work through the course.",
   author: 'Layla Abboud',
   repoUrl: 'https://github.com/LaylaAbboud02/cs229-learning-notes',
 } as const;
 
-/** Standard non-affiliation disclaimer. Must appear on every page. */
+/**
+ * Standard non-affiliation disclaimer, in a friendly first-person voice. Must
+ * stay visible wherever the design or the spec calls for it (footer, About,
+ * home, note detail).
+ */
 export const DISCLAIMER =
-  'Unofficial personal learning notes. Not affiliated with or endorsed by Stanford University.';
+  "This is my independent learning project. It isn't affiliated with, endorsed by, or sponsored by Stanford University.";
+
+/** Canonical human-readable URL for the note-content license (CC BY 4.0). */
+export const CONTENT_LICENSE_URL = 'https://creativecommons.org/licenses/by/4.0/';
 
 export interface NavItem {
   readonly label: string;

@@ -325,6 +325,64 @@ describe('production build output', () => {
     expect(scanDistForForbidden()).toEqual([]);
   });
 
+  it('no rendered HTML page carries stale restrictive-license or removed home-page copy', () => {
+    const stale = [
+      /all rights reserved/i,
+      /do not republish/i,
+      /does not grant republication/i,
+      /republication rights/i,
+      // The hero kicker was removed outright — neither the original author line
+      // nor the shortened label may reappear.
+      /Unofficial learning notes/i,
+      /is studying the public 2018 Stanford CS229/i,
+      /About these notes/i,
+    ];
+    const hits: string[] = [];
+    for (const file of walk(DIST)) {
+      if (!file.endsWith('.html')) continue;
+      const text = readFileSync(file, 'utf8');
+      for (const pattern of stale) {
+        if (pattern.test(text)) hits.push(`${relative(DIST, file)} :: ${pattern}`);
+      }
+    }
+    expect(hits).toEqual([]);
+  });
+
+  it('renders the non-affiliation disclaimer in the footer everywhere, and in-content only where intended', () => {
+    // Apostrophe-free slice of the shared DISCLAIMER — survives HTML entity encoding.
+    const DISCLAIMER_PHRASE = 'affiliated with, endorsed by, or sponsored by Stanford University';
+    const mainOf = (html: string) => (html.match(/<main[^>]*>[\s\S]*?<\/main>/i) ?? [''])[0];
+    const footerOf = (html: string) => (html.match(/<footer[^>]*>[\s\S]*?<\/footer>/i) ?? [''])[0];
+
+    // The home page dropped the hero disclaimer: not in <main>, still in <footer>.
+    const home = readFileSync(join(DIST, 'index.html'), 'utf8');
+    expect(mainOf(home), 'home <main> still shows the disclaimer').not.toContain(DISCLAIMER_PHRASE);
+    expect(footerOf(home), 'home <footer> is missing the disclaimer').toContain(DISCLAIMER_PHRASE);
+
+    // The About page and every note-detail page keep an in-content disclaimer.
+    for (const page of ['about/index.html', ...notes.map((n) => `notes/${n.slug}/index.html`)]) {
+      const html = readFileSync(join(DIST, page), 'utf8');
+      expect(mainOf(html), `${page} <main> is missing the disclaimer`).toContain(DISCLAIMER_PHRASE);
+      expect(footerOf(html), `${page} <footer> is missing the disclaimer`).toContain(
+        DISCLAIMER_PHRASE,
+      );
+    }
+  });
+
+  it('states the CC BY 4.0 note-content license, linked, on the home, about, and note pages', () => {
+    const ccByUrl = 'https://creativecommons.org/licenses/by/4.0/';
+    const pages = [
+      'index.html',
+      'about/index.html',
+      ...notes.map((n) => `notes/${n.slug}/index.html`),
+    ];
+    for (const page of pages) {
+      const html = readFileSync(join(DIST, page), 'utf8');
+      expect(html, `${page} names CC BY 4.0`).toMatch(/CC BY 4\.0/);
+      expect(html, `${page} links the license`).toContain(ccByUrl);
+    }
+  });
+
   it('stays clean when built with PUBLIC_DEMO_NOTES=on, even under NODE_ENV=test', () => {
     // NODE_ENV=test makes Vite's own import.meta.env.DEV true during a build, so
     // this is the worst case for the demo-notes guard.

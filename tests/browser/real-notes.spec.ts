@@ -105,10 +105,29 @@ test.describe('production note-detail route', () => {
     expect(await headContent(page, 'meta[property="og:url"]')).toBe(canonical);
     expect(await headContent(page, 'meta[property="og:type"]')).toBe('article');
 
+    // The note-detail page keeps the non-affiliation disclaimer in its own
+    // metadata panel (main content), not only in the shared footer.
     await expect(
-      page.getByText('Not affiliated with or endorsed by Stanford University.').first(),
+      page
+        .locator('main#main')
+        .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /Licensing/i }).first()).toBeVisible();
+    // Note content is CC BY 4.0, linked to the canonical license URL.
+    await expect(page.getByRole('link', { name: 'CC BY 4.0' }).first()).toHaveAttribute(
+      'href',
+      'https://creativecommons.org/licenses/by/4.0/',
+    );
+
+    // No stale restrictive-license wording on the note-detail page.
+    const bodyText = (await page.locator('body').innerText()).toLowerCase();
+    for (const stale of [
+      'all rights reserved',
+      'does not grant republication',
+      'republication rights',
+    ]) {
+      expect(bodyText, `note detail still shows "${stale}"`).not.toContain(stale);
+    }
 
     net.assertNone();
   });
