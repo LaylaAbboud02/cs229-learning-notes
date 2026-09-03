@@ -52,31 +52,31 @@ describe('collectNoteFiles', () => {
 });
 
 describe('validatePublishedNotes — note file layout boundary', () => {
-  it('passes when the notes directory is empty', () => {
-    expect(() => validatePublishedNotes(root)).not.toThrow();
+  it('resolves when the notes directory is empty', async () => {
+    await expect(validatePublishedNotes(root)).resolves.toBeUndefined();
   });
 
-  it('fails with a clear message when a nested Markdown note exists', () => {
+  it('rejects with a clear message when a nested Markdown note exists', async () => {
     writeFileSync(join(notesDir, 'kernels.md'), VALID_FRONTMATTER);
     mkdirSync(join(notesDir, 'drafts-like'), { recursive: true });
     writeFileSync(join(notesDir, 'drafts-like', 'sneaky.md'), VALID_FRONTMATTER);
 
-    expect(() => validatePublishedNotes(root)).toThrow(/Nested Markdown note/);
-    expect(() => validatePublishedNotes(root)).toThrow(/drafts-like\/sneaky\.md/);
-    expect(() => validatePublishedNotes(root)).toThrow(/<slug>\.md/);
+    await expect(validatePublishedNotes(root)).rejects.toThrow(/Invalid published note content/);
+    await expect(validatePublishedNotes(root)).rejects.toThrow(/drafts-like\/sneaky\.md/);
+    await expect(validatePublishedNotes(root)).rejects.toThrow(/<slug>\.md/);
   });
 
-  it('does not treat a nested non-markdown file as a violation', () => {
+  it('does not treat a nested non-markdown file as a violation', async () => {
     mkdirSync(join(notesDir, 'assets-notes'), { recursive: true });
     writeFileSync(join(notesDir, 'assets-notes', 'readme.txt'), 'not a note');
-    expect(() => validatePublishedNotes(root)).not.toThrow();
+    await expect(validatePublishedNotes(root)).resolves.toBeUndefined();
   });
 
-  it('reports invalid top-level frontmatter (no PDF parsing involved)', () => {
+  it('reports invalid top-level frontmatter', async () => {
     writeFileSync(
       join(notesDir, 'broken.md'),
       `---\ntitle: Broken\ntype: lecture\ncourseOrder: 0\ntopics: []\npublishedAt: 2026-01-01\npdfPath: /pdfs/lectures/broken.pdf\nthumbnailPath: /thumbnails/lectures/broken.webp\npageCount: 1\nfileSizeBytes: 1\n---\n`,
     );
-    expect(() => validatePublishedNotes(root)).toThrow(/Invalid published note content/);
+    await expect(validatePublishedNotes(root)).rejects.toThrow(/Invalid published note content/);
   });
 });

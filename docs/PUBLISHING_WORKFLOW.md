@@ -1,5 +1,24 @@
 # Ongoing Note Publishing Workflow
 
+## Prerequisites
+
+- Node.js 24+ and pnpm 11 (`corepack enable`).
+- A clean install: `pnpm install --frozen-lockfile`.
+- No system packages are required. PDF parsing, page counting, and thumbnail
+  rendering run entirely on bundled dependencies (`pdfjs-dist`, `@napi-rs/canvas`,
+  `sharp`) — there is nothing to `brew install` or `apt-get`.
+
+## The three commands
+
+| Command | What it does |
+| --- | --- |
+| `pnpm add-note <path-to-pdf>` | Guided import of one PDF. Publishes a complete note, or saves a local draft. |
+| `pnpm publish-note <draft-slug>` | Finish a saved draft and publish it. |
+| `pnpm validate-notes` | Check every published note (same rules the production build enforces). |
+
+None of them run `git`. They never stage, commit, push, or deploy. The supplied
+source PDF is opened read-only and never modified, renamed, moved, or deleted.
+
 ## Before importing
 
 1. Use a document-scanning mode rather than ordinary camera photos.
@@ -31,18 +50,39 @@ The guided command asks for:
 - featured status
 - whether the record is ready for publication
 
-If required information is missing, the command saves a **local-only draft** under `.drafts/`. It must explain that this location is gitignored and not backed up.
+It rejects a file that is not a real PDF (the `%PDF-` header is checked, not just
+the extension), that is encrypted, corrupt, empty, or has zero pages, or that is
+at or above GitHub's 100 MiB file limit. A file over 10 MiB triggers a warning
+and a confirmation prompt.
 
-If the entry is complete, the command:
+If any required field (title, description, at least one topic, a unique course
+order) is missing — or you answer "no" to "ready to publish now?" — the command
+saves a **local-only draft**:
 
-1. Copies the PDF into the correct public type directory.
-2. Generates the WebP thumbnail.
-3. Computes page count and file size.
-4. Creates the Markdown content entry.
-5. Runs note validation.
-6. Prints the created paths and suggested next commands.
+```text
+.drafts/<slug>/
+├── metadata.json   # the metadata gathered so far
+└── source.pdf      # a COPY of your PDF; the original is untouched
+```
 
-It does not modify the original file, commit, push, or deploy.
+`.drafts/` is entirely gitignored. **The repository is public, so a committed
+draft would not be private — and `.drafts/` is not a backup.** Keep your
+high-resolution original somewhere safe outside the repo.
+
+If the entry is complete and you confirm, the command:
+
+1. Validates the existing published notes first (it refuses to add to a broken set).
+2. Stages the PDF, WebP thumbnail, and Markdown file in a private temp directory.
+3. Rechecks for slug / path collisions.
+4. Copies all three into place with non-overwriting writes:
+   - `src/content/notes/<slug>.md`
+   - `public/pdfs/<lectures|exercises>/<slug>.pdf`
+   - `public/thumbnails/<lectures|exercises>/<slug>.webp`
+5. Re-validates the whole repository.
+6. Prints the created paths and the suggested review/commit commands.
+
+If any step fails it removes only the files that invocation created and leaves
+everything else untouched.
 
 ## Complete a saved draft
 
@@ -50,7 +90,24 @@ It does not modify the original file, commit, push, or deploy.
 pnpm publish-note <draft-slug>
 ```
 
-The command reopens/requests missing metadata, shows a final preview, and proceeds only after validation and confirmation.
+Pass the slug only — never a path. The command re-verifies the draft's PDF (it
+does not trust the stored page count), lets you complete or correct every field,
+stamps `publishedAt` with today's date, shows a final summary, and publishes
+through the same transactional pipeline only after you confirm.
+
+A successful `publish-note` does **not** delete the draft. Once you have reviewed
+the published note, remove it yourself:
+
+```bash
+rm -rf .drafts/<draft-slug>
+```
+
+## Recovering from a failed import
+
+If `add-note` or `publish-note` stops with an error, it has already rolled back
+any file it created for that run — `git status` should show only what you expect,
+or nothing. Re-run the command after fixing the cause (bad metadata, a collision,
+a corrupt PDF). Pressing Ctrl+C at any prompt writes nothing at all.
 
 ## Review before committing
 
@@ -63,6 +120,13 @@ pnpm build
 git status
 git diff --stat
 ```
+
+`pnpm validate-notes` runs the exact checks the production build runs (one shared
+implementation): frontmatter schema, canonical file names, unique
+slug/courseOrder/paths, asset existence, real PDF header, page count and byte
+size matching the actual PDF, valid WebP thumbnails, and per-file plus aggregate
+size thresholds. Errors exit non-zero; warnings alone exit zero. `pnpm build`
+now fails on the same content errors.
 
 Visually inspect:
 
