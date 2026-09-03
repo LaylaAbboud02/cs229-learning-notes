@@ -15,8 +15,14 @@ node_modules/
 # test / coverage artifacts
 coverage/
 
-# test-only demo preview build (scripts/demo-preview.mjs) — disposable
+# test-only demo preview build (scripts/demo-preview.mjs, Playwright) — disposable
 dist-demo/
+
+# Playwright browser-test output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
 
 # logs
 *.log

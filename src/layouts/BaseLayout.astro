@@ -9,13 +9,29 @@ interface Props {
   /** Page title; composed as "<title> · CS229 Learning Notes". Omit on the home page. */
   title?: string;
   description?: string;
+  /** Open Graph object type. `website` for listing pages, `article` for a note. */
+  ogType?: 'website' | 'article';
+  /**
+   * Social-share image, site-absolute (not base-prefixed). Defaults to the
+   * project card. Must be a real file under `public/`.
+   */
+  image?: string;
 }
 
-const { title, description = SITE.description } = Astro.props;
+const {
+  title,
+  description = SITE.description,
+  ogType = 'website',
+  image = '/og-image.png',
+} = Astro.props;
+
 const pageTitle = title ? `${title} · ${SITE.name}` : SITE.name;
 
-// Canonical URL respects both `site` and `base` (Astro.url is already base-aware).
+// `Astro.url` is already base-aware, so these resolve to the deployed URLs
+// (e.g. https://laylaabboud02.github.io/cs229-learning-notes/notes/).
 const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined;
+const socialImageURL = Astro.site ? new URL(withBase(image), Astro.site).href : withBase(image);
+const sitemapURL = withBase('/sitemap-index.xml');
 ---
 
 <!doctype html>
@@ -23,21 +39,41 @@ const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site).href :
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg')} />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f7f3ea" />
+
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     {canonicalURL && <link rel="canonical" href={canonicalURL} />}
+
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={withBase('/favicon.svg')} sizes="any" />
+    <link rel="apple-touch-icon" href={withBase('/favicon.svg')} />
+    <link rel="sitemap" type="application/xml" href={sitemapURL} />
+
     <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:site_name" content={SITE.name} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:locale" content="en_US" />
     {canonicalURL && <meta property="og:url" content={canonicalURL} />}
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={socialImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${SITE.name} — ${SITE.tagline}`} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageURL} />
+    <meta name="twitter:image:alt" content={`${SITE.name} — ${SITE.tagline}`} />
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <Header />
-    <main id="main" class="shell-container py-10 md:py-14">
+    <main id="main" tabindex="-1" class="shell-container py-10 md:py-14">
       <slot />
     </main>
     <Footer />

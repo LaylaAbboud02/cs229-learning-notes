@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:browser": "playwright test",
     "add-note": "tsx scripts/add-note.ts",
     "publish-note": "tsx scripts/publish-note.ts",
     "validate-notes": "tsx scripts/validate-notes.ts",
@@ -29,6 +30,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^6.0.5",
+    "@astrojs/sitemap": "^3.7.4",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.2.10",
     "gray-matter": "^4.0.3",
@@ -42,6 +44,7 @@
     "@eslint/js": "^10.0.1",
     "@inquirer/prompts": "^8.7.0",
     "@napi-rs/canvas": "^0.1.100",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",
