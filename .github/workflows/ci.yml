@@ -1,0 +1,99 @@
+name: CI
+
+# Runs on every pull request into main, on direct pushes to main, and on demand.
+# Read-only: this workflow never needs write access to the repository.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # One run per ref. Obsolete pull-request runs are cancelled; runs on main are
+  # left to finish so every merged commit gets a complete result.
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  quality:
+    name: Quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # Current official pnpm 11+ setup: installs pnpm 11.25.0 (read from the
+      # committed `packageManager` field) and Node 24 in one step, caches the
+      # pnpm store keyed on pnpm-lock.yaml, requires a committed lockfile, and
+      # runs `pnpm install --frozen-lockfile` — a deterministic install.
+      - name: Set up pnpm and Node 24
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+          cache-dependency-path: pnpm-lock.yaml
+          require-lockfile: true
+
+      - name: Print toolchain versions
+        run: |
+          node --version
+          pnpm --version
+
+      - name: Formatting
+        run: pnpm run format:check
+
+      - name: ESLint
+        run: pnpm run lint
+
+      - name: Astro / type check
+        run: pnpm run check
+
+      - name: Unit & integration tests
+        run: pnpm run test
+
+      - name: Validate notes & report media size
+        run: pnpm run validate-notes
+
+      - name: Production build
+        run: pnpm run build
+
+  browser:
+    name: Browser smoke tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm and Node 24
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@24
+          cache: true
+          cache-dependency-path: pnpm-lock.yaml
+          require-lockfile: true
+
+      - name: Print toolchain versions
+        run: |
+          node --version
+          pnpm --version
+
+      - name: Install Chromium for Playwright
+        # Chromium only in version one, with its Linux system dependencies.
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Playwright browser tests
+        run: pnpm run test:browser
+
+      - name: Upload Playwright report on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

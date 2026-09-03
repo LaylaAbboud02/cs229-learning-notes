@@ -151,6 +151,13 @@ git push origin main
 
 Be precise with `git add`; do not stage `.drafts/`, unrelated changes, or private originals.
 
+The push to `main` triggers the GitHub Pages deployment
+(`.github/workflows/deploy.yml`), which re-runs the full non-browser quality
+baseline (`pnpm verify`) before publishing. If any check fails the site is not
+deployed — fix `main` and push again. The deployed URL appears on the workflow
+run under the `github-pages` environment:
+<https://laylaabboud02.github.io/cs229-learning-notes/>.
+
 ## Code changes
 
 Use a branch and pull request:

@@ -1,0 +1,63 @@
+name: Deploy to GitHub Pages
+
+# Automatic on every push to main; also runnable on demand. Deployment is gated
+# to the main branch so a manual dispatch from another branch cannot publish.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  # Never run two Pages deployments at once; let an in-flight one finish.
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run full quality baseline, build, and upload the site
+        # The maintained Astro action installs dependencies and uploads `dist/`
+        # as the Pages artifact — no custom deployment scripting.
+        #
+        # `package-manager` is pinned to `pnpm@11.25.0`: the action detects pnpm
+        # from the lockfile but defaults its version to `latest` when none is
+        # supplied, so the exact version has to be given explicitly here to match
+        # the committed `packageManager` field. The action's own `pnpm install`
+        # is frozen (GitHub Actions sets `CI`, which makes pnpm refuse to touch
+        # an up-to-date lockfile).
+        #
+        # `build-cmd` runs the entire non-browser quality baseline (format:check,
+        # lint, astro check, unit + integration tests, note/media validation) and
+        # only then the production build, so an unchecked build is never
+        # published. No demo/fixture env vars are set.
+        uses: withastro/action@v6
+        with:
+          node-version: 24
+          package-manager: pnpm@11.25.0
+          build-cmd: pnpm run verify
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy artifact to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
