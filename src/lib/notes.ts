@@ -94,6 +94,17 @@ export function filterByType<T extends { type: NoteType }>(
   return notes.filter((note) => note.type === type);
 }
 
+/**
+ * Notes flagged `featured`, in the default course-sequence order. Used by the
+ * home page's highlight surface; empty when nothing is featured (the caller
+ * decides what to show instead).
+ */
+export function featuredNotes<T extends { featured: boolean; courseOrder: number; title: string }>(
+  notes: readonly T[],
+): T[] {
+  return sortByCourseOrder(notes.filter((note) => note.featured));
+}
+
 /** Case-insensitive topic filter. */
 export function filterByTopic<T extends { topics: readonly string[] }>(
   notes: readonly T[],
@@ -236,24 +247,18 @@ export function toPublicNoteSet(
 /**
  * Load every published note from the content collection, validated and ordered.
  *
- * `src/content/notes/` is empty until real notes are imported (Phase 5+), so
- * this returns `[]` today. It never includes drafts (those live only in the
- * gitignored `.drafts/`) or test fixtures.
+ * Reads the `notes` collection directly: `getCollection` returns `[]` for an
+ * empty collection, so there is nothing to short-circuit. It never includes
+ * drafts (those live only in the gitignored `.drafts/`) or test fixtures — those
+ * are not part of this collection.
  */
 export async function loadPublishedNotes(): Promise<PublicNote[]> {
-  const { existsSync, readdirSync } = await import('node:fs');
-  const { fileURLToPath } = await import('node:url');
-
-  // `src/content/notes/` is empty until real notes are imported. Skip
-  // `getCollection` in that case — Astro logs a noisy "collection is empty"
-  // warning for every page that queries an empty collection.
-  const notesDir = fileURLToPath(new URL('../content/notes', import.meta.url));
-  const hasNoteFiles =
-    existsSync(notesDir) && readdirSync(notesDir).some((name) => name.endsWith('.md'));
-  if (!hasNoteFiles) return [];
-
+  const { existsSync } = await import('node:fs');
   const { getCollection } = await import('astro:content');
+
   const entries = await getCollection('notes');
+  if (entries.length === 0) return [];
+
   const records: NoteRecord[] = entries.map((entry) => ({
     slug: entry.id,
     ...entry.data,

@@ -5,12 +5,19 @@ import NoteGrid from '../components/library/NoteGrid.astro';
 import EmptyState from '../components/library/EmptyState.astro';
 import { SITE, DISCLAIMER } from '../config/site';
 import { withBase } from '../lib/base-path';
-import { getListingNotes, sortByNewest } from '../lib/notes';
+import { getListingNotes, featuredNotes, sortByNewest } from '../lib/notes';
 import { pluralize } from '../lib/format';
 import { NOTE_TYPE_CONFIG } from '../config/note-types';
 
 const notes = await getListingNotes();
-const recent = sortByNewest(notes).slice(0, 4);
+
+// The home highlight surface shows notes flagged `featured`, in course order.
+// When nothing is featured it falls back to the most recent notes so the section
+// is never empty while notes exist.
+const featured = featuredNotes(notes).slice(0, 4);
+const highlights = featured.length > 0 ? featured : sortByNewest(notes).slice(0, 4);
+const highlightsHeading = featured.length > 0 ? 'Featured notes' : 'Recently added';
+
 const lectureCount = notes.filter((n) => n.type === 'lecture').length;
 const exerciseCount = notes.filter((n) => n.type === 'exercise').length;
 ---
@@ -94,9 +101,9 @@ const exerciseCount = notes.filter((n) => n.type === 'exercise').length;
       </aside>
     </section>
 
-    <section aria-labelledby="recent-heading">
+    <section aria-labelledby="home-highlights-heading" data-home-highlights>
       <div class="flex flex-wrap items-baseline justify-between gap-3">
-        <h2 id="recent-heading" class="flex items-center gap-2 text-2xl">
+        <h2 id="home-highlights-heading" class="flex items-center gap-2 text-2xl">
           <svg
             class="text-coral"
             width="20"
@@ -117,7 +124,7 @@ const exerciseCount = notes.filter((n) => n.type === 'exercise').length;
             <line x1="18.4" y1="5.6" x2="15.5" y2="8.5"></line>
             <line x1="8.5" y1="15.5" x2="5.6" y2="18.4"></line>
           </svg>
-          Recently added
+          {highlightsHeading}
         </h2>
         {
           notes.length > 0 && (
@@ -133,8 +140,8 @@ const exerciseCount = notes.filter((n) => n.type === 'exercise').length;
 
       <div class="mt-5">
         {
-          recent.length > 0 ? (
-            <NoteGrid notes={recent} />
+          highlights.length > 0 ? (
+            <NoteGrid notes={highlights} />
           ) : (
             <EmptyState title="No notes published yet">
               <p>

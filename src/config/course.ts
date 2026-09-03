@@ -105,6 +105,6 @@ export const COURSE: CourseConfig = {
   syllabusUrl: 'https://cs229.stanford.edu/syllabus-autumn2018.html',
   playlistUrl: `https://www.youtube.com/playlist?list=${PLAYLIST_ID}`,
   totalLectures: 20,
-  watchedLectureIds: [1, 2],
+  watchedLectureIds: [1, 2, 3],
   lectures: LECTURES,
 } as const;

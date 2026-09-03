@@ -42,6 +42,8 @@ interface RealNote {
   readonly title: string;
   readonly assetDir: string;
   readonly pdfPath: string;
+  readonly featured: boolean;
+  readonly courseOrder: number;
 }
 
 /** Legitimate public notes, discovered deterministically (sorted by slug). */
@@ -69,6 +71,8 @@ function discoverRealNotes(): RealNote[] {
       title: parsed.data.title,
       assetDir,
       pdfPath: `${BASE_PATH}/pdfs/${assetDir}/${slug}.pdf`,
+      featured: parsed.data.featured,
+      courseOrder: parsed.data.courseOrder,
     });
   }
   return notes;
@@ -156,5 +160,35 @@ test.describe('production note-detail route', () => {
       expect(await hasHorizontalOverflow(page)).toBe(false);
       net.assertNone();
     });
+  });
+});
+
+const FEATURED = REAL_NOTES.filter((n) => n.featured).sort((a, b) => a.courseOrder - b.courseOrder);
+
+test.describe('production homepage featured surface', () => {
+  test.skip(FEATURED.length === 0, 'No featured published notes yet.');
+
+  test('is driven by the featured flag, in course order', async ({ page }) => {
+    const net = blockAndDetectExternalRequests(page);
+    await page.goto('');
+
+    const surface = page.locator('[data-home-highlights]');
+    await expect(surface.getByRole('heading', { name: 'Featured notes' })).toBeVisible();
+
+    // Every featured note appears in the surface...
+    for (const note of FEATURED) {
+      await expect(surface.locator(`[data-slug="${note.slug}"]`)).toBeVisible();
+    }
+    // ...and no non-featured real note does.
+    for (const note of REAL_NOTES.filter((n) => !n.featured)) {
+      await expect(surface.locator(`[data-slug="${note.slug}"]`)).toHaveCount(0);
+    }
+    // Order matches course order (first up to four).
+    const shown = await surface
+      .locator('[data-note-card]')
+      .evaluateAll((els) => els.map((el) => el.getAttribute('data-slug')));
+    expect(shown).toEqual(FEATURED.slice(0, 4).map((n) => n.slug));
+
+    net.assertNone();
   });
 });
