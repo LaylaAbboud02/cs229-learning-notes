@@ -1,7 +1,7 @@
 ---
 import type { PublicNote } from '../../lib/notes';
 import { NOTE_TYPE_CONFIG } from '../../config/note-types';
-import { SITE } from '../../config/site';
+import { SITE, CONTENT_LICENSE_URL } from '../../config/site';
 import { formatDate, formatFileSize } from '../../lib/format';
 import Chip from '../library/Chip.astro';
 
@@ -93,8 +93,9 @@ if (note.updatedAt) rows.push({ label: 'Updated', value: formatDate(note.updated
 
   <p class="border-t border-border pt-4 text-xs text-muted">
     {
-      `Unofficial personal notes — not affiliated with or endorsed by Stanford University. Note content © ${new Date().getFullYear()} ${SITE.author}, all rights reserved; downloading does not grant republication rights. `
+      `Unofficial personal notes — not affiliated with, endorsed by, or sponsored by Stanford University. My note content is © ${new Date().getFullYear()} ${SITE.author}, licensed under `
     }
+    <a href={CONTENT_LICENSE_URL} class="underline">CC BY 4.0</a>.{' '}
     <a href={`${SITE.repoUrl}/blob/main/CONTENT-LICENSE.md`} class="underline">Licensing</a>.
   </p>
 </aside>

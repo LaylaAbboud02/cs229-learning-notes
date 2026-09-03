@@ -46,8 +46,11 @@ test.describe('core pages', () => {
       expect(response?.status()).toBe(200);
 
       await expect(page.locator('h1')).toHaveText(page_.h1);
+      // Non-affiliation disclaimer (first-person voice) is present on every page.
       await expect(
-        page.getByText('Not affiliated with or endorsed by Stanford University.').first(),
+        page
+          .getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i)
+          .first(),
       ).toBeVisible();
 
       // Canonical + og:url + twitter card
@@ -85,6 +88,84 @@ test.describe('core pages', () => {
         expect(html, `${page_.name} contains "${needle}"`).not.toContain(needle);
       }
       expect(html).not.toMatch(/_astro\/(PdfReader|pdf\.worker)[^"']*\.(js|mjs)/);
+    }
+  });
+});
+
+test.describe('site copy and content licensing', () => {
+  test('the home page has no hero kicker/author line or About-these-notes block', async ({
+    page,
+  }) => {
+    await page.goto('');
+    const html = await page.content();
+
+    // The hero kicker is gone entirely — neither the original author line nor the
+    // shortened "Unofficial learning notes" label, and no replacement kicker.
+    expect(html).not.toContain('Unofficial learning notes by');
+    expect(html).not.toContain('Unofficial learning notes');
+    await expect(page.getByText(/Unofficial learning notes/i)).toHaveCount(0);
+    // The <h1> is the first element in the hero column now.
+    await expect(page.locator('main h1').first()).toHaveText('CS229 Learning Notes');
+
+    // The removed "About these notes" section (heading, paragraph, and link).
+    await expect(page.getByRole('heading', { name: 'About these notes' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Read more about the project' })).toHaveCount(0);
+    expect(html).not.toMatch(/is studying the public 2018 Stanford CS229/i);
+
+    // No third-person "she/her" biography leaked onto the home page.
+    expect(html).not.toMatch(/\bpublishing her\b/i);
+
+    // The non-affiliation disclaimer still survives on the home page.
+    await expect(
+      page.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i).first(),
+    ).toBeVisible();
+  });
+
+  test('the About page carries the first-person project explanation', async ({ page }) => {
+    await page.goto('about/');
+    const main = page.locator('main#main');
+
+    await expect(
+      main.getByText(/^I'm Layla Abboud, and I'm working through Stanford's/),
+    ).toBeVisible();
+    await expect(main.getByText(/my own independent learning project/i)).toBeVisible();
+    await expect(main.getByRole('heading', { name: 'Why I publish these' })).toBeVisible();
+
+    // Licensing section: MIT for code, CC BY 4.0 for note content, linked.
+    await expect(
+      main.getByRole('link', { name: /Creative Commons Attribution 4\.0 \(CC BY 4\.0\)/ }),
+    ).toHaveAttribute('href', 'https://creativecommons.org/licenses/by/4.0/');
+    await expect(main.getByRole('link', { name: 'MIT License' })).toBeVisible();
+  });
+
+  test('the footer content-license notice is CC BY 4.0, linked, on every page', async ({
+    page,
+  }) => {
+    for (const { path, name } of PAGES) {
+      await page.goto(path);
+      const footer = page.locator('footer');
+      await expect(footer.getByText(/licensed under CC BY 4\.0/i), `${name} footer`).toBeVisible();
+      await expect(
+        footer.getByRole('link', { name: 'CC BY 4.0 terms' }),
+        `${name} footer link`,
+      ).toHaveAttribute('href', 'https://creativecommons.org/licenses/by/4.0/');
+    }
+  });
+
+  test('no visitor-facing page still uses restrictive "all rights reserved" wording', async ({
+    page,
+  }) => {
+    for (const { path, name } of PAGES) {
+      await page.goto(path);
+      const text = (await page.locator('body').innerText()).toLowerCase();
+      for (const stale of [
+        'all rights reserved',
+        'do not republish',
+        'does not grant republication',
+        'republication rights',
+      ]) {
+        expect(text, `${name} still shows "${stale}"`).not.toContain(stale);
+      }
     }
   });
 });

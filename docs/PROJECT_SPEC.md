@@ -33,7 +33,7 @@ The experience should not assume that visitors want a complete tutorial. A short
 - Automatic published-note count
 - Recently published notes
 - Links to the unified library, lectures, and exercises
-- Compact author/about section
+- A link to the About page (the biography and project explanation live there, not on the home page)
 
 ### Unified library — `/notes`
 
@@ -72,11 +72,11 @@ The experience should not assume that visitors want a complete tutorial. A short
 
 ### About — `/about`
 
-- Layla's short reason for studying the course
+- A first-person introduction: who is behind the project, what is being studied, and why the notes are published
 - Project methodology
 - Disclaimer that the site is unofficial and may contain errors
 - Link to GitHub repository
-- Licensing explanation
+- Licensing explanation (MIT source code; CC BY 4.0 note content)
 
 ### 404
 
@@ -107,11 +107,11 @@ Full-text/OCR indexing may be added later with Pagefind or another build-time in
 
 ## Content and legal boundaries
 
-- Publish Layla's original handwritten notes and original descriptions.
+- Publish the author's original handwritten notes and original descriptions.
 - Link to public course videos, notes, or exercise sources instead of rehosting them.
 - Do not publish Stanford logos, copied slides, transcripts, assignment PDFs, or problem statements unless permission is clear.
-- Display: `Unofficial personal learning notes. Not affiliated with or endorsed by Stanford University.`
-- A download button is allowed, but the content-license notice must state that downloading does not grant republication rights.
+- Display a non-affiliation disclaimer, e.g. `This is my independent learning project. It isn't affiliated, endorsed by, or sponsored by Stanford University.`
+- The original note content (handwritten notes, PDFs, descriptions, thumbnails) is licensed CC BY 4.0; the content-license notice must name that license and link to it. A download button is allowed.
 
 ## Version-one non-goals
 

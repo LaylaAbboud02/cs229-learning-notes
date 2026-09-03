@@ -1,12 +1,12 @@
 # CS229 Learning Notes
 
-A public, **unofficial** static website that archives Layla Abboud's handwritten
-learning notes for the public **2018 Stanford CS229** lecture series. Each note is
-a polished, browsable PDF entry with a short description and links to its public
-source.
+A public, **unofficial** static website where I ([Layla Abboud](https://github.com/LaylaAbboud02))
+archive my handwritten learning notes for the public **2018 Stanford CS229**
+lecture series. Each note is a polished, browsable PDF entry with a short
+description and links to its public source.
 
-> Unofficial personal learning notes. Not affiliated with or endorsed by Stanford
-> University.
+> This is my independent learning project. It isn't affiliated, endorsed by, or
+> sponsored by Stanford University.
 
 This is a personal learning archive — not an official Stanford product, a course
 replacement, a CMS, or a collaborative upload platform.
@@ -224,11 +224,16 @@ No custom domain, analytics, or tracking is configured.
 
 - **Source code:** MIT — see [`LICENSE`](./LICENSE).
 - **Note content** (handwritten notes, scanned PDFs, written titles and
-  descriptions, and derived thumbnails): **all rights reserved** — see
-  [`CONTENT-LICENSE.md`](./CONTENT-LICENSE.md). Downloading a note is for personal
-  study and does not grant republication rights.
+  descriptions, and derived thumbnails): **CC BY 4.0** —
+  [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/).
+  Share and adapt with appropriate credit; see
+  [`CONTENT-LICENSE.md`](./CONTENT-LICENSE.md) for the suggested attribution line.
+
+Suggested attribution: _CS229 Learning Notes by Layla Abboud, licensed under
+CC BY 4.0._
 
 This project links to publicly available CS229 (Autumn 2018) resources rather
 than rehosting Stanford videos, slides, official notes, or assignments, and does
-not use Stanford names or logos. It is not affiliated with or endorsed by
-Stanford University.
+not use Stanford names or logos. It is not affiliated with, endorsed by, or
+sponsored by Stanford University. Stanford's course materials are not relicensed
+by this project.

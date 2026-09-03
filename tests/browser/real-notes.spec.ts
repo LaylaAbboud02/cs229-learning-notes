@@ -106,9 +106,24 @@ test.describe('production note-detail route', () => {
     expect(await headContent(page, 'meta[property="og:type"]')).toBe('article');
 
     await expect(
-      page.getByText('Not affiliated with or endorsed by Stanford University.').first(),
+      page.getByText(/affiliated with, endorsed by, or sponsored by Stanford University/i).first(),
     ).toBeVisible();
     await expect(page.getByRole('link', { name: /Licensing/i }).first()).toBeVisible();
+    // Note content is CC BY 4.0, linked to the canonical license URL.
+    await expect(page.getByRole('link', { name: 'CC BY 4.0' }).first()).toHaveAttribute(
+      'href',
+      'https://creativecommons.org/licenses/by/4.0/',
+    );
+
+    // No stale restrictive-license wording on the note-detail page.
+    const bodyText = (await page.locator('body').innerText()).toLowerCase();
+    for (const stale of [
+      'all rights reserved',
+      'does not grant republication',
+      'republication rights',
+    ]) {
+      expect(bodyText, `note detail still shows "${stale}"`).not.toContain(stale);
+    }
 
     net.assertNone();
   });
